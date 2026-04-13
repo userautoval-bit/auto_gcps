@@ -2,16 +2,17 @@ import { Controller, Get, HttpCode, HttpStatus } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
+import { ApiOkResponse } from "@nestjs/swagger";
 
 @ApiTags('gcps')
 @Controller('gcps')
 export class GcpsController {
+  constructor(private gcpsService: GcpsService) {}
 
-    constructor(private gcpsService: GcpsService){}
-
-    @Get()
-    @HttpCode(HttpStatus.OK)
-    findAll(): Promise<Gcps[]>{
-        return this.gcpsService.findAll()
-    }
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: [Gcps] }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
+  findAll(): Promise<Gcps[]> {
+    return this.gcpsService.findAll();
+  }
 }
