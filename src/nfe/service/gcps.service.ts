@@ -10,7 +10,7 @@ export class GcpsService{
     ){}
 
          findAll(): Promise<Gcps[]> {
-         throw new Error("Method not implemented.");
+         return this.gcpsRepository.find();
      }
 
 
