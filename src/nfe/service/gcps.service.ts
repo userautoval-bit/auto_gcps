@@ -29,4 +29,15 @@ export class GcpsService{
           return registro;
      }
 
+     //Método para buscar pelo nome do cliente
+     async findByCliente(cliente: string): Promise<Gcps[]> {
+          const registros = await this.gcpsRepository.find({ where: { cliente } });
+
+          if(!registros || registros.length === 0) {
+               throw new HttpException('Registro não encontrado', HttpStatus.NOT_FOUND);
+          }
+
+          return registros;
+     }
+
 }

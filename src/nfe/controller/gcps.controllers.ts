@@ -17,12 +17,21 @@ export class GcpsController {
   }
 
 
+  // Endpoint para buscar um GCP pelo número da nota fiscal (nf)
   @Get(':nf')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: Gcps }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
   findById(@Param('nf') nf: string): Promise<Gcps[]> {
     return this.gcpsService.findByNf(nf);
   }
+
+    // Endpoint para buscar um GCP pelo nome do cliente
+    @Get(':cliente')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({ type: [Gcps] }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
+    findByCliente(@Param('cliente') cliente: string): Promise<Gcps[]> {
+        return this.gcpsService.findByCliente(cliente);
+    }
 
 
 }
