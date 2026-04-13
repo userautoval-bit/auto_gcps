@@ -28,7 +28,7 @@ export class GcpsController {
     // Endpoint para buscar um GCP pelo nome do cliente
     @Get(':cliente')
     @HttpCode(HttpStatus.OK)
-    @ApiOkResponse({ type: [Gcps] }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
+    @ApiOkResponse({ type: Gcps }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
     findByCliente(@Param('cliente') cliente: string): Promise<Gcps[]> {
         return this.gcpsService.findByCliente(cliente);
     }
