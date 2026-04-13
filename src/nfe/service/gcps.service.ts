@@ -19,12 +19,30 @@ export class GcpsService {
      //METODOS ESPECIAIS 
 
      //Buscar pela data de emissão
-     async findByEmissao(emissao: Date): Promise<Gcps[]> {
-          const registros = await this.gcpsRepository.find({ where: { emissao } });
-          if (!registros || registros.length === 0) {
-               throw new NotFoundException(`Nenhum registro encontrado para a data de emissão: ${emissao}`);
+     async findByEmissao(emissao: string): Promise<Gcps[]> {
+          let dataParaBusca: string;
+
+          // Verifica se a data está no formato brasileiro (contém "/" e o ano está no fim)
+          if (emissao.includes('/') && emissao.split('/')[2]?.length === 4) {
+               const [dia, mes, ano] = emissao.split('/');
+               dataParaBusca = `${ano}-${mes}-${dia}`;
+          } else {
+               // Caso já venha no padrão ISO (YYYY-MM-DD) ou com hífen
+               dataParaBusca = emissao.replace(/\//g, '-');
           }
+
+          const registros = await this.gcpsRepository.find({
+               where: {
+                    emissao: dataParaBusca as any
+               }
+          });
+
+          if (!registros || registros.length === 0) {
+               throw new NotFoundException(`Nenhum registro encontrado para a data: ${emissao}`);
+          }
+
           return registros;
+
      }
 
 
