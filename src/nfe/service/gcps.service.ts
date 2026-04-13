@@ -138,4 +138,41 @@ export class GcpsService {
           return registro;
      }
 
+     // Verificar se um GCP está vencido
+     async checkVencimento(nf: string) {
+          const registros = await this.gcpsRepository.find({ where: { nf } });
+
+          if (!registros || registros.length === 0) {
+               throw new NotFoundException(`Nota Fiscal ${nf} não encontrada.`);
+          }
+
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
+
+          return registros.map(item => {
+               const dataVencimento = new Date(item.vencimento);
+               let status = 'Em dia';
+               let diasVencidos = 0;
+
+               // Se não foi recebida e o vencimento é menor que hoje
+               if (!item.recebido_em && dataVencimento < hoje) {
+                    status = 'Vencida';
+                    const diffInMs = hoje.getTime() - dataVencimento.getTime();
+                    diasVencidos = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+               } else if (item.recebido_em) {
+                    status = 'Recebida';
+               }
+
+               return {
+                    nf: item.nf,
+                    cliente: item.cliente,
+                    emissao: item.emissao,
+                    vencimento: item.vencimento,
+                    recebido_em: item.recebido_em,
+                    faturamento: item.faturamento,
+                    status: status,
+                    dias_vencidos: diasVencidos
+               };
+          });
+     }
 }
