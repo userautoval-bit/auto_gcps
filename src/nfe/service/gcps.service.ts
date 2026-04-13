@@ -42,7 +42,32 @@ export class GcpsService {
           }
 
           return registros;
+     }
 
+      //Buscar pela data de VEncimento
+     async findByVencimento(vencimento: string): Promise<Gcps[]> {
+          let dataParaBusca: string;
+
+          // Verifica se a data está no formato brasileiro (contém "/" e o ano está no fim)
+          if (vencimento.includes('/') && vencimento.split('/')[2]?.length === 4) {
+               const [dia, mes, ano] = vencimento.split('/');
+               dataParaBusca = `${ano}-${mes}-${dia}`;
+          } else {
+               // Caso já venha no padrão ISO (YYYY-MM-DD) ou com hífen
+               dataParaBusca = vencimento.replace(/\//g, '-');
+          }
+
+          const registros = await this.gcpsRepository.find({
+               where: {
+                    vencimento: dataParaBusca as any
+               }
+          });
+
+          if (!registros || registros.length === 0) {
+               throw new NotFoundException(`Nenhum registro encontrado para a data: ${vencimento}`);
+          }
+
+          return registros;
      }
 
 

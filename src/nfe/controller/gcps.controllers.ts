@@ -26,6 +26,15 @@ export class GcpsController {
         return this.gcpsService.findByEmissao(emissao);
     }
 
+     //buscar por data de vencimento
+    @Get('vencimento/:vencimento')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({ type: Gcps }) 
+    findByVencimento(@Param('vencimento') vencimento: string): Promise<Gcps[]> {
+        const dataVencimento = new Date(vencimento);
+        return this.gcpsService.findByVencimento(vencimento);
+    }
+
 
   // Endpoint para buscar um GCP pelo número da nota fiscal (nf)
   @Get('nf/:nf')
