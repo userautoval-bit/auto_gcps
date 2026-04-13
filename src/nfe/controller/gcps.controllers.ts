@@ -62,7 +62,7 @@ export class GcpsController {
     }
 
         // Endpoint para buscar um GCP pelo nome do cliente
-    @Get('cliente/:cliente')
+    @Get('faturamento/:faturamento')
     @HttpCode(HttpStatus.OK)
     @ApiOkResponse({ type: Gcps }) 
     findByFaturamento(@Param('faturamento') faturamento: number): Promise<Gcps[]> {
