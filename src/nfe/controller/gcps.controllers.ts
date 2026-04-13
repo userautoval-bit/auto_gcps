@@ -61,6 +61,13 @@ export class GcpsController {
         return this.gcpsService.findByCliente(cliente);
     }
 
+        // Endpoint para buscar um GCP pelo nome do cliente
+    @Get('cliente/:cliente')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({ type: Gcps }) 
+    findByFaturamento(@Param('faturamento') faturamento: number): Promise<Gcps[]> {
+        return this.gcpsService.findByFaturamento(faturamento);
+    }
 
     
 }

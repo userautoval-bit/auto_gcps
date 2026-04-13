@@ -1,7 +1,8 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
-import { ILike, Repository } from "typeorm";
+import { Between, ILike, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
+import { max, min } from "rxjs";
 
 export class GcpsService {
 
@@ -43,7 +44,7 @@ export class GcpsService {
           return registros;
      }
 
-      //Buscar pela data de VEncimento
+     //Buscar pela data de VEncimento
      async findByVencimento(vencimento: string): Promise<Gcps[]> {
           let dataParaBusca: string;
 
@@ -69,7 +70,7 @@ export class GcpsService {
           return registros;
      }
 
-           //Buscar pela data de Recebimento
+     //Buscar pela data de Recebimento
      async findByRecebido(recebido_em: string): Promise<Gcps[]> {
           let dataParaBusca: string;
 
@@ -120,6 +121,21 @@ export class GcpsService {
           }
 
           return registros;
+     }
+
+     // Método para buscar um GCP pelo número da nota fiscal (nf)
+     async findByFaturamento(faturamento: number): Promise<Gcps[]> {
+          const registro = await this.gcpsRepository.find({
+               where: {
+                    faturamento: Between(faturamento - 10, faturamento + 100)
+               }
+          });
+
+          if (!registro) {
+               throw new HttpException('Registro não encontrado', HttpStatus.NOT_FOUND);
+          }
+
+          return registro;
      }
 
 }
