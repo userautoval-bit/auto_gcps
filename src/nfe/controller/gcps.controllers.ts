@@ -15,4 +15,14 @@ export class GcpsController {
   findAll(): Promise<Gcps[]> {
     return this.gcpsService.findAll();
   }
+
+
+  @Get(':nf')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: Gcps }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
+  findById(nf: string): Promise<Gcps> {
+    return this.gcpsService.findById(nf);
+  }
+
+
 }
