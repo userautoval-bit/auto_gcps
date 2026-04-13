@@ -18,6 +18,16 @@ export class GcpsService {
 
      //METODOS ESPECIAIS 
 
+     //Buscar pela data de emissão
+     async findByEmissao(emissao: Date): Promise<Gcps[]> {
+          const registros = await this.gcpsRepository.find({ where: { emissao } });
+          if (!registros || registros.length === 0) {
+               throw new NotFoundException(`Nenhum registro encontrado para a data de emissão: ${emissao}`);
+          }
+          return registros;
+     }
+
+
      // Método para buscar um GCP pelo número da nota fiscal (nf)
      async findByNf(nf: string): Promise<Gcps[]> {
           const registro = await this.gcpsRepository.find({ where: { nf } });

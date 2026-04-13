@@ -16,6 +16,16 @@ export class GcpsController {
     return this.gcpsService.findAll();
   }
 
+  
+  //buscar por data de emissão
+    @Get('emissao/:emissao')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({ type: Gcps }) 
+    findByEmissao(@Param('emissao') emissao: string): Promise<Gcps[]> {
+        const dataEmissao = new Date(emissao);
+        return this.gcpsService.findByEmissao(dataEmissao);
+    }
+
 
   // Endpoint para buscar um GCP pelo número da nota fiscal (nf)
   @Get('nf/:nf')
@@ -34,4 +44,5 @@ export class GcpsController {
     }
 
 
+    
 }
