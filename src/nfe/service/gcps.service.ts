@@ -37,7 +37,7 @@ export class GcpsService {
                }
           });
 
-          if (registros.length === 0) {
+          if (!registros || registros.length === 0) {
                throw new NotFoundException(`Nenhum cliente encontrado com o termo: ${cliente}`);
           }
 
