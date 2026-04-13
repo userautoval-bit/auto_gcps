@@ -35,6 +35,15 @@ export class GcpsController {
         return this.gcpsService.findByVencimento(vencimento);
     }
 
+    //buscar por data de Recebimento
+    @Get('recebido/:recebido_em')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({ type: Gcps }) 
+    findByRecebido(@Param('recebido_em') recebido_em: string): Promise<Gcps[]> {
+        const dataRecebido = new Date(recebido_em);
+        return this.gcpsService.findByRecebido(recebido_em);
+    }
+
 
   // Endpoint para buscar um GCP pelo número da nota fiscal (nf)
   @Get('nf/:nf')

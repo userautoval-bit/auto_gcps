@@ -15,7 +15,6 @@ export class GcpsService {
      }
 
 
-
      //METODOS ESPECIAIS 
 
      //Buscar pela data de emissão
@@ -65,6 +64,32 @@ export class GcpsService {
 
           if (!registros || registros.length === 0) {
                throw new NotFoundException(`Nenhum registro encontrado para a data: ${vencimento}`);
+          }
+
+          return registros;
+     }
+
+           //Buscar pela data de Recebimento
+     async findByRecebido(recebido_em: string): Promise<Gcps[]> {
+          let dataParaBusca: string;
+
+          // Verifica se a data está no formato brasileiro (contém "/" e o ano está no fim)
+          if (recebido_em.includes('/') && recebido_em.split('/')[2]?.length === 4) {
+               const [dia, mes, ano] = recebido_em.split('/');
+               dataParaBusca = `${ano}-${mes}-${dia}`;
+          } else {
+               // Caso já venha no padrão ISO (YYYY-MM-DD) ou com hífen
+               dataParaBusca = recebido_em.replace(/\//g, '-');
+          }
+
+          const registros = await this.gcpsRepository.find({
+               where: {
+                    recebido_em: dataParaBusca as any
+               }
+          });
+
+          if (!registros || registros.length === 0) {
+               throw new NotFoundException(`Nenhum registro encontrado para a data: ${recebido_em}`);
           }
 
           return registros;
