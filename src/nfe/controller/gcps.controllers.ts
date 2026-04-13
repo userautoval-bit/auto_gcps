@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
@@ -20,8 +20,8 @@ export class GcpsController {
   @Get(':nf')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: Gcps }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
-  findById(nf: string): Promise<Gcps> {
-    return this.gcpsService.findById(nf);
+  findById(@Param('nf') nf: string): Promise<Gcps[]> {
+    return this.gcpsService.findByNf(nf);
   }
 
 

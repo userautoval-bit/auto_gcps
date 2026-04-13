@@ -19,16 +19,8 @@ export class GcpsService{
 //METODOS ESPECIAIS 
 
      // Método para buscar um GCP por ID
-     async findById(nf: string): Promise<Gcps> {
-          const nfe_num = await this.gcpsRepository.findOneBy({ nf });
-
-          if(!nfe_num){
-               throw new HttpException(
-                    'GCP não encontrado', 
-                    HttpStatus.NOT_FOUND
-               );
-          }
-          return nfe_num;
+     async findByNf(nf: string): Promise<Gcps[]> {
+          return await this.gcpsRepository.find({ where: { nf } });
      }
 
 }
