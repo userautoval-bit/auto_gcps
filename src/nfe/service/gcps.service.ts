@@ -18,9 +18,15 @@ export class GcpsService{
 
 //METODOS ESPECIAIS 
 
-     // Método para buscar um GCP por ID
+     // Método para buscar um GCP pelo número da nota fiscal (nf)
      async findByNf(nf: string): Promise<Gcps[]> {
-          return await this.gcpsRepository.find({ where: { nf } });
+          const registro = await this.gcpsRepository.find({ where: { nf } });
+
+          if(!registro || registro.length === 0) {
+               throw new HttpException('Registro não encontrado', HttpStatus.NOT_FOUND);
+          }
+          
+          return registro;
      }
 
 }
