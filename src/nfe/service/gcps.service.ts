@@ -14,7 +14,7 @@ export class GcpsService {
      // Método para buscar todos os GCPs
      async findAll(page: number = 1, limit: number = 10) {
           const [registros, total] = await this.gcpsRepository.findAndCount({
-               order: { vencimento: 'DESC' }, // Mostra os vencimentos mais recentes primeiro
+               order: { emissao: 'ASC' }, // Mostra os mais antigos primeiro
                skip: (page - 1) * limit,
                take: limit,
           });
