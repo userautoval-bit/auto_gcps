@@ -9,11 +9,17 @@ import { ApiOkResponse, ApiQuery } from "@nestjs/swagger";
 export class GcpsController {
     constructor(private gcpsService: GcpsService) { }
 
+    // Endpoint para buscar todos os GCPs com paginação
     @Get()
     @HttpCode(HttpStatus.OK)
-    @ApiOkResponse({ type: [Gcps] }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
-    findAll(): Promise<Gcps[]> {
-        return this.gcpsService.findAll();
+    @ApiOkResponse({ type: [Gcps] })
+    @ApiQuery({ name: 'page', required: false, example: 1 })
+    @ApiQuery({ name: 'limit', required: false, example: 10 })
+    findAll(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ): Promise<any> {
+        return this.gcpsService.findAll(Number(page), Number(limit));
     }
 
 
