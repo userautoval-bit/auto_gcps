@@ -1,8 +1,8 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
 import { Between, ILike, IsNull, Repository } from "typeorm";
-import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
-import { max, min } from "rxjs";
+import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
+
 
 export class GcpsService {
 
@@ -41,20 +41,17 @@ export class GcpsService {
 
 
      //Método para editar um GCP existente com o PATCH
-     async update(id: number, dados: any): Promise<Gcps> {
-          // 1. "Carrega" as informações atuais do registro
-          const registroAtual = await this.gcpsRepository.findOneBy({ id });
+     async salvarRegistro(dados: any): Promise<Gcps> {
+          try {
+               // Garantimos que o faturamento e v_recebido sejam números (float/decimal)
+               if (dados.faturamento) dados.faturamento = parseFloat(dados.faturamento);
+               if (dados.v_recebido) dados.v_recebido = parseFloat(dados.v_recebido);
 
-          if (!registroAtual) {
-               throw new NotFoundException(`Nota Fiscal com ID ${id} não encontrada.`);
+               // O .save() faz o trabalho pesado de verificar se o ID existe
+               return await this.gcpsRepository.save(dados);
+          } catch (error) {
+               throw new InternalServerErrorException("Erro ao salvar no banco Neon: " + error);
           }
-
-          // 2. "Mescla" (Edita) apenas o que foi enviado no corpo da requisição
-          // O que não for enviado em 'dados' continuará com o valor de 'registroAtual'
-          const registroEditado = this.gcpsRepository.merge(registroAtual, dados);
-
-          // 3. Salva a versão final (com os dados antigos + edições)
-          return await this.gcpsRepository.save(registroEditado);
      }
 
 
@@ -140,7 +137,8 @@ export class GcpsService {
 
      // Método para buscar um GCP pelo número da nota fiscal (nf)
      async findByNf(nf: string): Promise<Gcps[]> {
-          const registro = await this.gcpsRepository.find({ where: {nf} 
+          const registro = await this.gcpsRepository.find({
+               where: { nf }
           });
 
           if (!registro || registro.length === 0) {
@@ -216,7 +214,6 @@ export class GcpsService {
           });
      }
 
-
      // Método para buscar notas vencidas (não recebidas e com vencimento anterior a hoje)
      async findVencidas(page: number = 1, limit: number = 10) {
           const hoje = new Date();
@@ -256,7 +253,6 @@ export class GcpsService {
                lastPage: Math.ceil(total / limit)
           };
      }
-
 
      //Prevendo o faturamento mensal (total previsto para um mês/ano específico, considerando apenas os registros que ainda não foram recebidos)
      async findPrevisaoMensal(mes: number, ano: number) {

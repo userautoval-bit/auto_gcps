@@ -31,24 +31,13 @@ export class GcpsController {
     }
 
     // Endpoint para atualizar um GCP existente
-    @Patch(':id')
-    @ApiOperation({ summary: 'Carrega o registro pelo ID e edita os campos enviados' })
-    @ApiBody({
-        schema: {
-            type: 'object',
-            properties: {
-                nf: { type: 'string' },
-                cliente: { type: 'string' },
-                faturamento: { type: 'number' },
-                v_recebido: { type: 'number' },
-                recebido_em: { type: 'string' },
-                tipo_pg: { type: 'string' }
-            }
-        }
-    })
-    async update(@Param('id') id: string, @Body() dados: any) {
-        // Passamos o ID e os campos para o Service processar a "mesclagem"
-        return await this.gcpsService.update(Number(id), dados);
+    @Post('salvar')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Salva ou Atualiza um registro' })
+    async salvar(@Body() dados: any) {
+        // Se o objeto 'dados' vier com um 'id', o TypeORM vai atualizar o existente.
+        // Se vier sem 'id', ele vai criar um novo.
+        return await this.gcpsService.salvarRegistro(dados);
     }
 
 
