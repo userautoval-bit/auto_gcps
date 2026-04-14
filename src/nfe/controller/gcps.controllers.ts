@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
@@ -42,6 +42,13 @@ export class GcpsController {
     @HttpCode(HttpStatus.OK)
     async update(@Body() gcpsData: Gcps): Promise<Gcps> {
         return this.gcpsService.updateGCPS(gcpsData)
+    }
+
+    // Endpoint para deletar um GCP pelo ID
+    @Delete(':id')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+        await this.gcpsService.delete(id);
     }
 
     //***  ESPECIAIS ***/

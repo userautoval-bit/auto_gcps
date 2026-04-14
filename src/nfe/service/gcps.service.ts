@@ -1,6 +1,6 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
-import { Between, ILike, IsNull, Repository } from "typeorm";
+import { Between, DeleteResult, ILike, IsNull, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
 
 
@@ -30,10 +30,10 @@ export class GcpsService {
 
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {
-          const registro = await this.gcpsRepository.findOne({ where: { id } });     
+          const registro = await this.gcpsRepository.findOne({ where: { id } });
           if (!registro) {
                throw new NotFoundException(`Registro com ID ${id} não encontrado.`);
-          }    
+          }
           return registro;
      }
 
@@ -50,18 +50,23 @@ export class GcpsService {
 
 
      //Método para editar um GCP existente com o PATCH
-   async updateGCPS(gcpsData: Gcps): Promise<Gcps> {
-          await this.findByNf(gcpsData.nf); 
-          
-          if(gcpsData.id  === undefined || gcpsData.id === null ) {
+     async updateGCPS(gcpsData: Gcps): Promise<Gcps> {
+          await this.findByNf(gcpsData.nf);
+
+          if (gcpsData.id === undefined || gcpsData.id === null) {
                throw new HttpException('ID é obrigatório para atualização', HttpStatus.BAD_REQUEST);
           }
-          await this.gcpsRepository.update({ id: gcpsData.id }, gcpsData);      
+          await this.gcpsRepository.update({ id: gcpsData.id }, gcpsData);
 
-          return this.gcpsRepository.save( gcpsData);
-     }    
-   
+          return this.gcpsRepository.save(gcpsData);
+     }
 
+     // Método para deletar um GCP pelo ID
+     async delete(id: number): Promise<DeleteResult> {
+          await this.findById(id);
+
+          return await this.gcpsRepository.delete(id);
+     }
 
      //METODOS ESPECIAIS 
      //Buscar pela data de emissão
