@@ -42,19 +42,19 @@ export class GcpsService {
 
      //Método para editar um GCP existente com o PATCH
      async update(id: number, dados: any): Promise<Gcps> {
-          // 1. Buscamos o registro atual no Neon
-          const registroExistente = await this.gcpsRepository.findOneBy({ id });
+          // 1. "Carrega" as informações atuais do registro
+          const registroAtual = await this.gcpsRepository.findOneBy({ id });
 
-          if (!registroExistente) {
-               throw new NotFoundException(`ID ${id} não encontrado.`);
+          if (!registroAtual) {
+               throw new NotFoundException(`Nota Fiscal com ID ${id} não encontrada.`);
           }
 
-          // 2. Mesclamos o que já existe com o que você enviou agora
-          // O Object.assign copia as propriedades de 'dados' para o 'registroExistente'
-          const registroAtualizado = Object.assign(registroExistente, dados);
+          // 2. "Mescla" (Edita) apenas o que foi enviado no corpo da requisição
+          // O que não for enviado em 'dados' continuará com o valor de 'registroAtual'
+          const registroEditado = this.gcpsRepository.merge(registroAtual, dados);
 
-          // 3. Salvamos a versão mesclada
-          return await this.gcpsRepository.save(registroAtualizado);
+          // 3. Salva a versão final (com os dados antigos + edições)
+          return await this.gcpsRepository.save(registroEditado);
      }
 
 
