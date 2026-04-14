@@ -22,6 +22,13 @@ export class GcpsController {
         return this.gcpsService.findAll(Number(page), Number(limit));
     }
 
+    // Endpoint para buscar um GCP pelo ID
+    @Get(':id')
+    @HttpCode(HttpStatus.OK)
+    findById(@Param('id', ParseIntPipe) id: number): Promise<Gcps> {
+        return this.gcpsService.findById(id);
+    }
+
 
     // Endpoint para criar um novo GCP
     @Post()
@@ -71,7 +78,7 @@ export class GcpsController {
     @Get('nf/:nf')
     @HttpCode(HttpStatus.OK)
     @ApiOkResponse({ type: Gcps }) // Isso faz os campos (emissao, cliente, faturamento) aparecerem no Swagger
-    findById(@Param('nf') nf: string): Promise<Gcps[]> {
+    findByNf(@Param('nf') nf: string): Promise<Gcps[]> {
         return this.gcpsService.findByNf(nf);
     }
 

@@ -11,6 +11,7 @@ export class GcpsService {
           private gcpsRepository: Repository<Gcps>,
      ) { }
 
+
      // Método para buscar todos os GCPs
      async findAll(page: number = 1, limit: number = 10) {
           const [registros, total] = await this.gcpsRepository.findAndCount({
@@ -27,6 +28,14 @@ export class GcpsService {
           };
      }
 
+     //para buscar um GCP pelo ID
+     async findById(id: number): Promise<Gcps> {
+          const registro = await this.gcpsRepository.findOne({ where: { id } });     
+          if (!registro) {
+               throw new NotFoundException(`Registro com ID ${id} não encontrado.`);
+          }    
+          return registro;
+     }
 
      //Método para criar um novo GCP
      async create(gcpsData: Gcps): Promise<Gcps> {
