@@ -89,4 +89,15 @@ export class GcpsController {
         return await this.gcpsService.findVencidas(Number(page), Number(limit));
     }
 
+
+    // Endpoint para prever o faturamento mensal
+    @Get('relatorio/previsao')
+    @ApiQuery({ name: 'mes', example: 5 })
+    @ApiQuery({ name: 'ano', example: 2026 })
+    async getPrevisao(
+        @Query('mes') mes: string,
+        @Query('ano') ano: string
+    ) {
+        return await this.gcpsService.findPrevisaoMensal(Number(mes), Number(ano));
+    }
 }

@@ -1,6 +1,6 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
-import { Between, ILike, Repository } from "typeorm";
+import { Between, ILike, IsNull, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
 import { max, min } from "rxjs";
 
@@ -212,6 +212,39 @@ export class GcpsService {
                total,
                page,
                lastPage: Math.ceil(total / limit)
+          };
+     }
+
+
+     //Prevendo o faturamento mensal (total previsto para um mês/ano específico, considerando apenas os registros que ainda não foram recebidos)
+     async findPrevisaoMensal(mes: number, ano: number) {
+          // 1. Criar a data de início: dia 01 do mês e ano escolhidos
+          const dataInicio = new Date(ano, mes - 1, 1);
+
+          // 2. Criar a data de fim: dia 01 do PRÓXIMO mês, menos 1 milisegundo (gera o último dia do mês atual)
+          const dataFim = new Date(ano, mes, 0, 23, 59, 59);
+
+          const registros = await this.gcpsRepository.find({
+               where: {
+                    vencimento: Between(dataInicio, dataFim),
+                    recebido_em: IsNull(), // Opcional: Remova se quiser ver TUDO (pagos e não pagos)
+               },
+               order: { vencimento: 'ASC' }
+          });
+
+          // 3. Calcular o totalizador
+          const totalPrevisto = registros.reduce((sum, item) => sum + Number(item.faturamento), 0);
+
+          return {
+               periodo: `${mes}/${ano}`,
+               totalPrevisto: totalPrevisto.toFixed(2),
+               quantidadeNotas: registros.length,
+               notas: registros.map(item => ({
+                    nf: item.nf,
+                    cliente: item.cliente,
+                    vencimento: item.vencimento,
+                    faturamento: item.faturamento
+               }))
           };
      }
 }
