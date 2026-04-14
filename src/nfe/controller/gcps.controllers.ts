@@ -32,22 +32,22 @@ export class GcpsController {
 
     // Endpoint para atualizar um GCP existente
     @Patch(':id')
-    @ApiOperation({ summary: 'Atualiza um ou mais campos de uma nota' })
+    @ApiOperation({ summary: 'Carrega o registro pelo ID e edita os campos enviados' })
     @ApiBody({
         schema: {
             type: 'object',
             properties: {
-                nf: { type: 'string', example: '17180 1/1' },
+                nf: { type: 'string' },
                 cliente: { type: 'string' },
                 faturamento: { type: 'number' },
                 v_recebido: { type: 'number' },
-                recebido_em: { type: 'string', example: '2026-04-14' },
-                tipo_pg: { type: 'string', example: 'BOLETO' }
+                recebido_em: { type: 'string' },
+                tipo_pg: { type: 'string' }
             }
         }
     })
     async update(@Param('id') id: string, @Body() dados: any) {
-        // O segredo está aqui: o Service vai dar um "merge" nos dados
+        // Passamos o ID e os campos para o Service processar a "mesclagem"
         return await this.gcpsService.update(Number(id), dados);
     }
 
