@@ -140,7 +140,11 @@ export class GcpsService {
 
      // Método para buscar um GCP pelo número da nota fiscal (nf)
      async findByNf(nf: string): Promise<Gcps[]> {
-          const registro = await this.gcpsRepository.find({ where: { nf } });
+          const registro = await this.gcpsRepository.find({
+                where: {
+                    nf: ILike(`%${nf}%`) // O ILike faz a mágica da busca parcial
+                }
+          });
 
           if (!registro || registro.length === 0) {
                throw new HttpException('Registro não encontrado', HttpStatus.NOT_FOUND);
