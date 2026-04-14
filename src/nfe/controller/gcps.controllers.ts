@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
@@ -28,6 +28,17 @@ export class GcpsController {
     @HttpCode(HttpStatus.CREATED)
     async create(@Body() gcpsData: Gcps): Promise<Gcps> {
         return await this.gcpsService.create(gcpsData);
+    }
+
+    // Endpoint para atualizar um GCP existente
+    @Patch(':id')
+    @HttpCode(HttpStatus.OK)
+    @ApiOkResponse({ type: Gcps })
+    async update(
+        @Param('id') id: string,
+        @Body() dados: Partial<Gcps> // Recebe os campos diretamente
+    ) {
+        return await this.gcpsService.update(Number(id), dados);
     }
 
 

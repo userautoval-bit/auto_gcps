@@ -29,14 +29,30 @@ export class GcpsService {
 
 
      //Método para criar um novo GCP
-     async create(gcpsData:Gcps): Promise<Gcps>{
+     async create(gcpsData: Gcps): Promise<Gcps> {
           const buscarRegistro = await this.gcpsRepository.findOne({ where: { nf: gcpsData.nf } });
 
-          if(buscarRegistro){
+          if (buscarRegistro) {
                throw new HttpException('Já existe um registro com essa NF', HttpStatus.BAD_REQUEST);
           }
           const novoRegistro = this.gcpsRepository.create(gcpsData);
           return this.gcpsRepository.save(novoRegistro);
+     }
+
+     
+     //Método para editar um GCP existente com o PATCH
+     async update(id: number, dados: Partial<Gcps>): Promise<Gcps> {
+          // O Partial<Gcps> permite que você envie qualquer combinação de campos da sua entidade
+          const registro = await this.gcpsRepository.preload({
+               id: id,
+               ...dados,
+          });
+
+          if (!registro) {
+               throw new NotFoundException(`Nota Fiscal com ID ${id} não encontrada.`);
+          }
+
+          return await this.gcpsRepository.save(registro);
      }
 
 
