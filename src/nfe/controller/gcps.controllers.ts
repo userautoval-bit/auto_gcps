@@ -1,8 +1,8 @@
-import { Controller, Get, HttpCode, HttpStatus, Param } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param, Query } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
-import { ApiOkResponse } from "@nestjs/swagger";
+import { ApiOkResponse, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags('gcps')
 @Controller('gcps')
@@ -75,6 +75,18 @@ export class GcpsController {
     @ApiOkResponse({ description: 'Retorna o status de vencimento da nota' })
     async getStatusVencimento(@Param('nf') nf: string) {
         return await this.gcpsService.checkVencimento(nf);
+    }
+
+    // Endpoint para buscar notas vencidas (não recebidas e com vencimento anterior a hoje)
+    @Get('relatorio/vencidas')
+    @ApiQuery({ name: 'page', required: false, example: 1 })
+    @ApiQuery({ name: 'limit', required: false, example: 10 })
+    async getVencidas(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ) {
+        // Convertemos para garantir que sejam números
+        return await this.gcpsService.findVencidas(Number(page), Number(limit));
     }
 
 }

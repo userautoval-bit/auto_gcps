@@ -175,4 +175,45 @@ export class GcpsService {
                };
           });
      }
+
+
+     // Método para buscar notas vencidas (não recebidas e com vencimento anterior a hoje)
+     async findVencidas(page: number = 1, limit: number = 10) {
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+
+          // Criamos o QueryBuilder para buscar apenas notas não recebidas e vencidas
+          const queryBuilder = this.gcpsRepository.createQueryBuilder('gcps')
+               .where('gcps.recebido_em IS NULL')
+               .andWhere('gcps.vencimento < :hoje', { hoje })
+               .orderBy('gcps.vencimento', 'ASC') // As mais antigas primeiro
+               .skip((page - 1) * limit)
+               .take(limit);
+
+          const [registros, total] = await queryBuilder.getManyAndCount();
+
+          // Mapeamos para incluir o cálculo de dias vencidos
+          const data = registros.map(item => {
+               const dataVencimento = new Date(item.vencimento);
+               const diffInMs = hoje.getTime() - dataVencimento.getTime();
+               const diasVencidos = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+               return {
+                    nf: item.nf,
+                    cliente: item.cliente,
+                    emissao: item.emissao,
+                    vencimento: item.vencimento,
+                    faturamento: item.faturamento,
+                    status: 'Vencida',
+                    dias_vencidos: diasVencidos
+               };
+          });
+
+          return {
+               data,
+               total,
+               page,
+               lastPage: Math.ceil(total / limit)
+          };
+     }
 }
