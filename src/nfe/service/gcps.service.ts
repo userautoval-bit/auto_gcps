@@ -126,9 +126,7 @@ export class GcpsService {
      // Método para buscar um GCP pelo número da nota fiscal (nf)
      async findByFaturamento(faturamento: number): Promise<Gcps[]> {
           const registro = await this.gcpsRepository.find({
-               where: {
-                    faturamento: Between(faturamento - 10, faturamento + 100)
-               }
+               where: { faturamento }
           });
 
           if (!registro) {
