@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query 
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
-import { ApiOkResponse, ApiQuery } from "@nestjs/swagger";
+import { ApiBody, ApiOkResponse, ApiOperation, ApiQuery } from "@nestjs/swagger";
 
 @ApiTags('gcps')
 @Controller('gcps')
@@ -32,12 +32,22 @@ export class GcpsController {
 
     // Endpoint para atualizar um GCP existente
     @Patch(':id')
-    @HttpCode(HttpStatus.OK)
-    @ApiOkResponse({ type: Gcps })
-    async update(
-        @Param('id') id: string,
-        @Body() dados: Partial<Gcps> // Recebe os campos diretamente
-    ) {
+    @ApiOperation({ summary: 'Atualiza um ou mais campos de uma nota' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                nf: { type: 'string', example: '17180 1/1' },
+                cliente: { type: 'string' },
+                faturamento: { type: 'number' },
+                v_recebido: { type: 'number' },
+                recebido_em: { type: 'string', example: '2026-04-14' },
+                tipo_pg: { type: 'string', example: 'BOLETO' }
+            }
+        }
+    })
+    async update(@Param('id') id: string, @Body() dados: any) {
+        // O segredo está aqui: o Service vai dar um "merge" nos dados
         return await this.gcpsService.update(Number(id), dados);
     }
 

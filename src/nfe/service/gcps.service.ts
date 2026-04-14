@@ -39,20 +39,22 @@ export class GcpsService {
           return this.gcpsRepository.save(novoRegistro);
      }
 
-     
-     //Método para editar um GCP existente com o PATCH
-     async update(id: number, dados: Partial<Gcps>): Promise<Gcps> {
-          // O Partial<Gcps> permite que você envie qualquer combinação de campos da sua entidade
-          const registro = await this.gcpsRepository.preload({
-               id: id,
-               ...dados,
-          });
 
-          if (!registro) {
-               throw new NotFoundException(`Nota Fiscal com ID ${id} não encontrada.`);
+     //Método para editar um GCP existente com o PATCH
+     async update(id: number, dados: any): Promise<Gcps> {
+          // 1. Buscamos o registro atual no Neon
+          const registroExistente = await this.gcpsRepository.findOneBy({ id });
+
+          if (!registroExistente) {
+               throw new NotFoundException(`ID ${id} não encontrado.`);
           }
 
-          return await this.gcpsRepository.save(registro);
+          // 2. Mesclamos o que já existe com o que você enviou agora
+          // O Object.assign copia as propriedades de 'dados' para o 'registroExistente'
+          const registroAtualizado = Object.assign(registroExistente, dados);
+
+          // 3. Salvamos a versão mesclada
+          return await this.gcpsRepository.save(registroAtualizado);
      }
 
 
