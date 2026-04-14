@@ -41,19 +41,17 @@ export class GcpsService {
 
 
      //Método para editar um GCP existente com o PATCH
-     async salvarRegistro(dados: any): Promise<Gcps> {
-          try {
-               // 1. Tratamento básico de tipos para evitar erro 500 no Postgres
-               if (dados.faturamento) dados.faturamento = parseFloat(dados.faturamento);
-               if (dados.v_recebido) dados.v_recebido = parseFloat(dados.v_recebido);
-
-               // 2. O .save() verifica o ID: se existir no banco, ele atualiza os campos enviados
-               return await this.gcpsRepository.save(dados);
-          } catch (error) {
-               // Usando o nome correto da exceção do NestJS
-               throw new InternalServerErrorException("Erro ao atualizar no banco Neon: " + error);
+   async updateGCPS(gcpsData: Gcps): Promise<Gcps> {
+          await this.findByNf(gcpsData.nf); 
+          
+          if(gcpsData.id  === undefined || gcpsData.id === null ) {
+               throw new HttpException('ID é obrigatório para atualização', HttpStatus.BAD_REQUEST);
           }
-     }
+          await this.gcpsRepository.update({ id: gcpsData.id }, gcpsData);      
+
+          return this.gcpsRepository.save( gcpsData);
+     }    
+   
 
 
      //METODOS ESPECIAIS 

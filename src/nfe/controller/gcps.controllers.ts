@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
@@ -31,13 +31,10 @@ export class GcpsController {
     }
 
     // Endpoint para atualizar um GCP existente
-    @Put(':id')
+    @Put('/atualizar')
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Atualiza um registro existente (PUT)' })
-    async updatePut(@Param('id') id: string, @Body() dados: any) {
-        // Garantimos que o ID da URL seja inserido nos dados antes de enviar ao service
-        dados.id = Number(id);
-        return await this.gcpsService.salvarRegistro(dados);
+    async update(@Body() gcpsData: Gcps): Promise<Gcps> {
+        return this.gcpsService.updateGCPS(gcpsData)
     }
 
     //***  ESPECIAIS ***/
