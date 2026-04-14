@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
@@ -23,6 +23,15 @@ export class GcpsController {
     }
 
 
+    // Endpoint para criar um novo GCP
+    @Post()
+    @HttpCode(HttpStatus.CREATED)
+    async create(@Body() gcpsData: Gcps): Promise<Gcps> {
+        return await this.gcpsService.create(gcpsData);
+    }
+
+
+    //Endpoint Espeiais 
     //buscar por data de emissão
     @Get('emissao/:emissao')
     @HttpCode(HttpStatus.OK)

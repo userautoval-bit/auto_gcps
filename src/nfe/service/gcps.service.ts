@@ -28,6 +28,18 @@ export class GcpsService {
      }
 
 
+     //Método para criar um novo GCP
+     async create(gcpsData:Gcps): Promise<Gcps>{
+          const buscarRegistro = await this.gcpsRepository.findOne({ where: { nf: gcpsData.nf } });
+
+          if(buscarRegistro){
+               throw new HttpException('Já existe um registro com essa NF', HttpStatus.BAD_REQUEST);
+          }
+          const novoRegistro = this.gcpsRepository.create(gcpsData);
+          return this.gcpsRepository.save(novoRegistro);
+     }
+
+
      //METODOS ESPECIAIS 
      //Buscar pela data de emissão
      async findByEmissao(emissao: string): Promise<Gcps[]> {
