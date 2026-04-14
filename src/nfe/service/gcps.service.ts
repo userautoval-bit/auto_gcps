@@ -43,14 +43,15 @@ export class GcpsService {
      //Método para editar um GCP existente com o PATCH
      async salvarRegistro(dados: any): Promise<Gcps> {
           try {
-               // Garantimos que o faturamento e v_recebido sejam números (float/decimal)
+               // 1. Tratamento básico de tipos para evitar erro 500 no Postgres
                if (dados.faturamento) dados.faturamento = parseFloat(dados.faturamento);
                if (dados.v_recebido) dados.v_recebido = parseFloat(dados.v_recebido);
 
-               // O .save() faz o trabalho pesado de verificar se o ID existe
+               // 2. O .save() verifica o ID: se existir no banco, ele atualiza os campos enviados
                return await this.gcpsRepository.save(dados);
           } catch (error) {
-               throw new InternalServerErrorException("Erro ao salvar no banco Neon: " + error);
+               // Usando o nome correto da exceção do NestJS
+               throw new InternalServerErrorException("Erro ao atualizar no banco Neon: " + error);
           }
      }
 

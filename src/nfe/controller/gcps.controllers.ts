@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
@@ -31,16 +31,16 @@ export class GcpsController {
     }
 
     // Endpoint para atualizar um GCP existente
-    @Post('salvar')
+    @Put(':id')
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Salva ou Atualiza um registro' })
-    async salvar(@Body() dados: any) {
-        // Se o objeto 'dados' vier com um 'id', o TypeORM vai atualizar o existente.
-        // Se vier sem 'id', ele vai criar um novo.
+    @ApiOperation({ summary: 'Atualiza um registro existente (PUT)' })
+    async updatePut(@Param('id') id: string, @Body() dados: any) {
+        // Garantimos que o ID da URL seja inserido nos dados antes de enviar ao service
+        dados.id = Number(id);
         return await this.gcpsService.salvarRegistro(dados);
     }
 
-
+    //***  ESPECIAIS ***/
     //Endpoint Espeiais 
     //buscar por data de emissão
     @Get('emissao/:emissao')
