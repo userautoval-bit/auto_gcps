@@ -22,6 +22,12 @@ export class GcpsController {
         return this.gcpsService.findAll(Number(page), Number(limit));
     }
 
+    // Endpoint para obter estatísticas do dashboard (quantidade total, vencidas, próximas a vencer)
+    @Get('stats')
+    async getStats() {
+        return await this.gcpsService.getDashboardStats();
+    }
+
     // Endpoint para buscar um GCP pelo ID
     @Get(':id')
     @HttpCode(HttpStatus.OK)
@@ -137,9 +143,5 @@ export class GcpsController {
         return await this.gcpsService.findPrevisaoMensal(Number(mes), Number(ano));
     }
 
-    // Endpoint para obter estatísticas do dashboard
-    @Get('stats')
-    async getStats() {
-        return await this.gcpsService.getDashboardStats();
-    }
+
 }
