@@ -301,27 +301,33 @@ export class GcpsService {
 
      //Método para saber quantidade notas, valores, e pendencia de pagamento para o dashboard
      async getDashboardStats() {
-  const totalNfes = await this.gcpsRepository.count();
+          // 1. TOTAL NFES: Conta apenas números de NF distintos (ignora parcelas repetidas)
+          const resTotalNf = await this.gcpsRepository
+               .createQueryBuilder("g")
+               .select("COUNT(DISTINCT(g.nf))", "total")
+               .getRawOne();
 
-  const pagas = await this.gcpsRepository.count({
-    where: { recebido_em: Not(IsNull()) }
-  });
+          // 2. APROVADAS: Conta parcelas individuais que já foram pagas (recebido_em preenchido)
+          const aprovadas = await this.gcpsRepository.count({
+               where: { recebido_em: Not(IsNull()) }
+          });
 
-  const pendentes = await this.gcpsRepository.count({
-    where: { recebido_em: IsNull() }
-  });
+          // 3. PENDENTES: Conta parcelas individuais que ainda não foram pagas
+          const pendentes = await this.gcpsRepository.count({
+               where: { recebido_em: IsNull() }
+          });
 
-  // A parte corrigida:
-  const resultadoSoma = await this.gcpsRepository
-    .createQueryBuilder("g")
-    .select("SUM(g.faturamento)", "total")
-    .getRawOne();
+          // 4. VALOR TOTAL: Soma o faturamento de todas as parcelas no banco
+          const resSoma = await this.gcpsRepository
+               .createQueryBuilder("g")
+               .select("SUM(g.faturamento)", "total")
+               .getRawOne();
 
-  return {
-    totalNfes,
-    pagas,
-    pendentes,
-    valorTotal: parseFloat(resultadoSoma.total) || 0
-  };
-}
+          return {
+               totalNfes: parseInt(resTotalNf.total) || 0,
+               aprovadas,
+               pendentes,
+               valorTotal: parseFloat(resSoma.total) || 0,
+          };
+     }
 }
