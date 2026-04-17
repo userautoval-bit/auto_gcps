@@ -1,6 +1,6 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
-import { Between, DeleteResult, ILike, IsNull, Repository } from "typeorm";
+import { Between, DeleteResult, ILike, IsNull, Not, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
 
 
@@ -296,6 +296,39 @@ export class GcpsService {
                     vencimento: item.vencimento,
                     faturamento: item.faturamento
                }))
+          };
+     }
+
+     //Método para saber quantidade notas, valores, e pendencia de pagamento para o dashboard
+     async getDashboardStats() {
+          // 1. Total de notas
+          const totalNfes = await this.gcpsRepository.count();
+
+          // 2. Notas Aprovadas (onde recebido_em não é nulo/vazio)
+          // Nota: Ajuste a verificação de acordo com como o dado é salvo no seu banco
+          const aprovadas = await this.gcpsRepository.count({
+               where: { recebido_em: Not(IsNull()) }
+          });
+
+          // 3. Notas Pendentes (onde recebido_em é nulo)
+          const pendentes = await this.gcpsRepository.count({
+               where: { recebido_em: IsNull() }
+          });
+
+          // 4. Valor Total (Soma da coluna faturamento)
+          // 4. Valor Total (Soma da coluna faturamento usando QueryBuilder)
+          const resultadoSoma = await this.gcpsRepository
+               .createQueryBuilder("gcps") // "gcps" é um apelido (alias) para a tabela
+               .select("SUM(gcps.faturamento)", "total")
+               .getRawOne();
+
+          const valorTotal = parseFloat(resultadoSoma.total) || 0;
+
+          return {
+               totalNfes,
+               aprovadas,
+               pendentes,
+               valorTotal
           };
      }
 }

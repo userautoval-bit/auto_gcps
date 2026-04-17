@@ -136,4 +136,10 @@ export class GcpsController {
     ) {
         return await this.gcpsService.findPrevisaoMensal(Number(mes), Number(ano));
     }
+
+    // Endpoint para obter estatísticas do dashboard
+    @Get('stats')
+    async getStats() {
+        return await this.gcpsService.getDashboardStats();
+    }
 }
