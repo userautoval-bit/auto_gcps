@@ -13,7 +13,7 @@ export class GcpsService {
 
 
      // Método para buscar todos os GCPs
-     async findAll(page: number = 1, limit: number = 10) {
+     async findAll(page: number = 1, limit: number = 5) {
           const [registros, total] = await this.gcpsRepository.findAndCount({
                order: { emissao: 'DESC' }, // Mostra os mais novos primeiro
                skip: (page - 1) * limit,
