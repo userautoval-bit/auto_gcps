@@ -303,7 +303,7 @@ export class GcpsService {
      async getDashboardStats() {
   const totalNfes = await this.gcpsRepository.count();
 
-  const aprovadas = await this.gcpsRepository.count({
+  const pagas = await this.gcpsRepository.count({
     where: { recebido_em: Not(IsNull()) }
   });
 
@@ -319,7 +319,7 @@ export class GcpsService {
 
   return {
     totalNfes,
-    aprovadas,
+    pagas,
     pendentes,
     valorTotal: parseFloat(resultadoSoma.total) || 0
   };
