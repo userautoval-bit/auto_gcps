@@ -13,20 +13,46 @@ export class GcpsService {
 
 
      // Método para buscar todos os GCPs
-     async findAll(page: number = 1, limit: number = 5) {
-          const [registros, total] = await this.gcpsRepository.findAndCount({
-               order: { emissao: 'DESC' }, // Mostra os mais novos primeiro
-               skip: (page - 1) * limit,
-               take: limit,
-          });
+async findAll(page: number = 1, limit: number = 5, search?: string, status?: string) {
+    // 1. Construir a cláusula WHERE dinamicamente
+    let onde: any = {};
 
-          return {
-               data: registros,
-               total,
-               page,
-               lastPage: Math.ceil(total / limit),
-          };
-     }
+    // Filtro de Texto (Busca em Cliente ou NF)
+    if (search) {
+        onde = [
+            { cliente: ILike(`%${search}%`) },
+            { nf: ILike(`%${search}%`) }
+        ];
+    }
+
+    // Filtro de Status
+    if (status && status !== 'Todos') {
+        // Se a busca já tiver o array do 'search', precisamos aplicar o status em cada condição
+        if (Array.isArray(onde)) {
+            onde = onde.map(condicao => ({
+                ...condicao,
+                recebido_em: status === 'Recebida' ? Not(IsNull()) : IsNull()
+            }));
+        } else {
+            onde.recebido_em = status === 'Recebida' ? Not(IsNull()) : IsNull();
+        }
+    }
+
+    // 2. Executar a busca com os filtros
+    const [registros, total] = await this.gcpsRepository.findAndCount({
+        where: onde,
+        order: { emissao: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+    });
+
+    return {
+        data: registros,
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+    };
+}
 
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {

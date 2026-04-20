@@ -15,11 +15,20 @@ export class GcpsController {
     @ApiOkResponse({ type: [Gcps] })
     @ApiQuery({ name: 'page', required: false, example: 1 })
     @ApiQuery({ name: 'limit', required: false, example: 10 })
+    @ApiQuery({ name: 'search', required: false }) // Swagger
+    @ApiQuery({ name: 'status', required: false }) // Swagger
     findAll(
         @Query('page') page: number = 1,
-        @Query('limit') limit: number = 10
+        @Query('limit') limit: number = 10,
+        @Query('search') search?: string,   // Captura o search
+        @Query('status') status?: string    // Captura o status
     ): Promise<any> {
-        return this.gcpsService.findAll(Number(page), Number(limit));
+        return this.gcpsService.findAll(
+            Number(page),
+            Number(limit),
+            search,
+            status
+        );
     }
 
     // Endpoint para obter estatísticas do dashboard (quantidade total, vencidas, próximas a vencer)
