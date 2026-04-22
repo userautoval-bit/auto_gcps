@@ -77,30 +77,30 @@ export class GcpsService {
 
      //Método para editar um GCP existente com o PATCH
      async updateGCPS(gcpsData: Gcps): Promise<Gcps> {
-    // 1. Validar se o ID foi enviado
-    if (!gcpsData.id) {
-        throw new HttpException('ID é obrigatório para atualização', HttpStatus.BAD_REQUEST);
-    }
+          // 1. Validar se o ID foi enviado
+          if (!gcpsData.id) {
+               throw new HttpException('ID é obrigatório para atualização', HttpStatus.BAD_REQUEST);
+          }
 
-    // 2. Verificar se o registro existe pelo ID (e não pela NF)
-    const registroExistente = await this.gcpsRepository.findOne({ where: { id: gcpsData.id } });
-    
-    if (!registroExistente) {
-        throw new NotFoundException(`Registro com ID ${gcpsData.id} não encontrado.`);
-    }
+          // 2. Verificar se o registro existe pelo ID (e não pela NF)
+          const registroExistente = await this.gcpsRepository.findOne({ where: { id: gcpsData.id } });
 
-    // 3. (OPCIONAL) Se você mudou a NF, verificar se o NOVO número já não está em uso por OUTRA nota
-    if (gcpsData.nf !== registroExistente.nf) {
-        const nfJaExiste = await this.gcpsRepository.findOne({ where: { nf: gcpsData.nf } });
-        if (nfJaExiste) {
-            throw new HttpException('Este novo número de NF já está cadastrado em outra nota.', HttpStatus.BAD_REQUEST);
-        }
-    }
+          if (!registroExistente) {
+               throw new NotFoundException(`Registro com ID ${gcpsData.id} não encontrado.`);
+          }
 
-    // 4. Atualizar os dados
-    // O save no TypeORM com ID presente faz o Update automaticamente
-    return await this.gcpsRepository.save(gcpsData);
-}
+          // 3. (OPCIONAL) Se você mudou a NF, verificar se o NOVO número já não está em uso por OUTRA nota
+          if (gcpsData.nf !== registroExistente.nf) {
+               const nfJaExiste = await this.gcpsRepository.findOne({ where: { nf: gcpsData.nf } });
+               if (nfJaExiste) {
+                    throw new HttpException('Este novo número de NF já está cadastrado em outra nota.', HttpStatus.BAD_REQUEST);
+               }
+          }
+
+          // 4. Atualizar os dados
+          // O save no TypeORM com ID presente faz o Update automaticamente
+          return await this.gcpsRepository.save(gcpsData);
+     }
 
      // Método para deletar um GCP pelo ID
      async delete(id: number): Promise<DeleteResult> {
@@ -371,4 +371,34 @@ export class GcpsService {
                valorTotal: parseFloat(resSoma.total) || 0,
           };
      }
+
+
+     async getRelatorioAnual(ano: number) {
+          const dadosRaw = await this.gcpsRepository
+               .createQueryBuilder("g")
+               .select("EXTRACT(MONTH FROM g.vencimento)", "mes")
+               .addSelect("SUM(g.faturamento)", "faturado")
+               .addSelect(
+                    "SUM(CASE WHEN g.recebido_em IS NOT NULL THEN g.faturamento ELSE 0 END)",
+                    "recebido"
+               )
+               .addSelect(
+                    "COUNT(CASE WHEN g.recebido_em IS NULL THEN 1 END)",
+                    "qtd_pendente"
+               )
+               .where("EXTRACT(YEAR FROM g.vencimento) = :ano", { ano })
+               .groupBy("mes")
+               .orderBy("mes", "ASC")
+               .getRawMany();
+
+          // Vamos formatar para garantir que os números venham como números e não strings
+          return dadosRaw.map(d => ({
+               mes: parseInt(d.mes),
+               faturado: parseFloat(d.faturado || 0),
+               recebido: parseFloat(d.recebido || 0),
+               pendente: parseFloat(d.faturado || 0) - parseFloat(d.recebido || 0),
+               quantidadePendentes: parseInt(d.qtd_pendente || 0)
+          }));
+     }
 }
+
