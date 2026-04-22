@@ -400,5 +400,46 @@ export class GcpsService {
                quantidadePendentes: parseInt(d.qtd_pendente || 0)
           }));
      }
+
+
+
+  // Este é o método que traz o "filme completo" do mês para a nova visualização
+async findRelatorioMensalDetalhado(mes: number, ano: number) {
+    // 1. Definir o intervalo do mês
+    const dataInicio = new Date(ano, mes - 1, 1);
+    const dataFim = new Date(ano, mes, 0, 23, 59, 59);
+
+    // 2. Buscar TODOS os registros do intervalo (sem filtrar por recebido_em)
+    const notas = await this.gcpsRepository.find({
+        where: {
+            vencimento: Between(dataInicio, dataFim)
+        },
+        order: { vencimento: 'ASC' }
+    });
+
+    // 3. Calcular os totais baseados no que veio do banco
+    const totalFaturado = notas.reduce((acc, n) => acc + Number(n.faturamento), 0);
+    const totalRecebido = notas.reduce((acc, n) => acc + (n.recebido_em ? Number(n.faturamento) : 0), 0);
+    const totalPendente = totalFaturado - totalRecebido;
+
+    // 4. Retornar o objeto estruturado para o Front
+    return {
+        busca: { mes, ano },
+        totais: {
+            faturado: totalFaturado,
+            recebido: totalRecebido,
+            pendente: totalPendente,
+            quantidade: notas.length
+        },
+        // Retornamos as notas com o campo recebido_em para o Front saber colorir a linha
+        notas: notas.map(n => ({
+            nf: n.nf,
+            cliente: n.cliente,
+            vencimento: n.vencimento,
+            faturamento: n.faturamento,
+            recebido_em: n.recebido_em // Se for null, o front sabe que está pendente
+        }))
+    };
+}
 }
 

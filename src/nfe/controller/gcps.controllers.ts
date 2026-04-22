@@ -158,4 +158,12 @@ export class GcpsController {
         return await this.gcpsService.getRelatorioAnual(ano);
     }
 
+    @Get('relatorio/detalhado/:mes/:ano')
+async getRelatorioDetalhado(
+  @Param('mes', ParseIntPipe) mes: number,
+  @Param('ano', ParseIntPipe) ano: number
+) {
+  return await this.gcpsService.findRelatorioMensalDetalhado(mes, ano);
+}
+
 }
