@@ -13,46 +13,46 @@ export class GcpsService {
 
 
      // Método para buscar todos os GCPs
-async findAll(page: number = 1, limit: number = 5, search?: string, status?: string) {
-    // 1. Construir a cláusula WHERE dinamicamente
-    let onde: any = {};
+     async findAll(page: number = 1, limit: number = 5, search?: string, status?: string) {
+          // 1. Construir a cláusula WHERE dinamicamente
+          let onde: any = {};
 
-    // Filtro de Texto (Busca em Cliente ou NF)
-    if (search) {
-        onde = [
-            { cliente: ILike(`%${search}%`) },
-            { nf: ILike(`%${search}%`) }
-        ];
-    }
+          // Filtro de Texto (Busca em Cliente ou NF)
+          if (search) {
+               onde = [
+                    { cliente: ILike(`%${search}%`) },
+                    { nf: ILike(`%${search}%`) }
+               ];
+          }
 
-    // Filtro de Status
-    if (status && status !== 'Todos') {
-        // Se a busca já tiver o array do 'search', precisamos aplicar o status em cada condição
-        if (Array.isArray(onde)) {
-            onde = onde.map(condicao => ({
-                ...condicao,
-                recebido_em: status === 'Recebida' ? Not(IsNull()) : IsNull()
-            }));
-        } else {
-            onde.recebido_em = status === 'Recebida' ? Not(IsNull()) : IsNull();
-        }
-    }
+          // Filtro de Status
+          if (status && status !== 'Todos') {
+               // Se a busca já tiver o array do 'search', precisamos aplicar o status em cada condição
+               if (Array.isArray(onde)) {
+                    onde = onde.map(condicao => ({
+                         ...condicao,
+                         recebido_em: status === 'Recebida' ? Not(IsNull()) : IsNull()
+                    }));
+               } else {
+                    onde.recebido_em = status === 'Recebida' ? Not(IsNull()) : IsNull();
+               }
+          }
 
-    // 2. Executar a busca com os filtros
-    const [registros, total] = await this.gcpsRepository.findAndCount({
-        where: onde,
-        order: { emissao: 'DESC' },
-        skip: (page - 1) * limit,
-        take: limit,
-    });
+          // 2. Executar a busca com os filtros
+          const [registros, total] = await this.gcpsRepository.findAndCount({
+               where: onde,
+               order: { emissao: 'DESC' },
+               skip: (page - 1) * limit,
+               take: limit,
+          });
 
-    return {
-        data: registros,
-        total,
-        page,
-        lastPage: Math.ceil(total / limit),
-    };
-}
+          return {
+               data: registros,
+               total,
+               page,
+               lastPage: Math.ceil(total / limit),
+          };
+     }
 
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {
@@ -77,15 +77,30 @@ async findAll(page: number = 1, limit: number = 5, search?: string, status?: str
 
      //Método para editar um GCP existente com o PATCH
      async updateGCPS(gcpsData: Gcps): Promise<Gcps> {
-          await this.findByNf(gcpsData.nf);
+    // 1. Validar se o ID foi enviado
+    if (!gcpsData.id) {
+        throw new HttpException('ID é obrigatório para atualização', HttpStatus.BAD_REQUEST);
+    }
 
-          if (gcpsData.id === undefined || gcpsData.id === null) {
-               throw new HttpException('ID é obrigatório para atualização', HttpStatus.BAD_REQUEST);
-          }
-          await this.gcpsRepository.update({ id: gcpsData.id }, gcpsData);
+    // 2. Verificar se o registro existe pelo ID (e não pela NF)
+    const registroExistente = await this.gcpsRepository.findOne({ where: { id: gcpsData.id } });
+    
+    if (!registroExistente) {
+        throw new NotFoundException(`Registro com ID ${gcpsData.id} não encontrado.`);
+    }
 
-          return this.gcpsRepository.save(gcpsData);
-     }
+    // 3. (OPCIONAL) Se você mudou a NF, verificar se o NOVO número já não está em uso por OUTRA nota
+    if (gcpsData.nf !== registroExistente.nf) {
+        const nfJaExiste = await this.gcpsRepository.findOne({ where: { nf: gcpsData.nf } });
+        if (nfJaExiste) {
+            throw new HttpException('Este novo número de NF já está cadastrado em outra nota.', HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // 4. Atualizar os dados
+    // O save no TypeORM com ID presente faz o Update automaticamente
+    return await this.gcpsRepository.save(gcpsData);
+}
 
      // Método para deletar um GCP pelo ID
      async delete(id: number): Promise<DeleteResult> {
