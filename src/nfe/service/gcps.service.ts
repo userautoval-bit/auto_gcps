@@ -434,10 +434,12 @@ async findRelatorioMensalDetalhado(mes: number, ano: number) {
         // Retornamos as notas com o campo recebido_em para o Front saber colorir a linha
         notas: notas.map(n => ({
             nf: n.nf,
+            emissao: n.emissao,
             cliente: n.cliente,
             vencimento: n.vencimento,
             faturamento: n.faturamento,
-            recebido_em: n.recebido_em // Se for null, o front sabe que está pendente
+            recebido_em: n.recebido_em,
+            tipo_pg: n.tipo_pg || "---"
         }))
     };
 }
