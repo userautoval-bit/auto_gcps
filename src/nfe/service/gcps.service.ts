@@ -318,37 +318,49 @@ export class GcpsService {
           };
      }
 
-     //Prevendo o faturamento mensal (total previsto para um mês/ano específico, considerando apenas os registros que ainda não foram recebidos)
-     async findPrevisaoMensal(mes: number, ano: number) {
-          // 1. Criar a data de início: dia 01 do mês e ano escolhidos
-          const dataInicio = new Date(ano, mes - 1, 1);
+// Prevendo o faturamento mensal e total faturado no mês
+async findPrevisaoMensal(mes: number, ano: number) {
+    // 1. Criar as datas de intervalo para o filtro
+    const dataInicio = new Date(ano, mes - 1, 1);
+    const dataFim = new Date(ano, mes, 0, 23, 59, 59);
 
-          // 2. Criar a data de fim: dia 01 do PRÓXIMO mês, menos 1 milisegundo (gera o último dia do mês atual)
-          const dataFim = new Date(ano, mes, 0, 23, 59, 59);
+    // 2. BUSCA 1: O que vai VENCER no mês (Sua lógica original que já funciona)
+    const registrosVencimento = await this.gcpsRepository.find({
+        where: {
+            vencimento: Between(dataInicio, dataFim),
+            recebido_em: IsNull(), // Mantém apenas o que está pendente
+        },
+        order: { vencimento: 'ASC' }
+    });
 
-          const registros = await this.gcpsRepository.find({
-               where: {
-                    vencimento: Between(dataInicio, dataFim),
-                    recebido_em: IsNull(), // Opcional: Remova se quiser ver TUDO (pagos e não pagos)
-               },
-               order: { vencimento: 'ASC' }
-          });
+    // 3. BUSCA 2: Tudo que foi EMITIDO no mês (Faturamento Bruto / Regime de Competência)
+    // Aqui buscamos todas as notas, independente de estarem pagas ou não
+    const registrosEmissao = await this.gcpsRepository.find({
+        where: {
+            emissao: Between(dataInicio, dataFim),
+        }
+    });
 
-          // 3. Calcular o totalizador
-          const totalPrevisto = registros.reduce((sum, item) => sum + Number(item.faturamento), 0);
+    // 4. Calcular os totalizadores
+    const totalPrevisto = registrosVencimento.reduce((sum, item) => sum + Number(item.faturamento), 0);
+    
+    // Soma do Faturamento Bruto (Baseado na data de emissão)
+    const totalFaturadoNoMes = registrosEmissao.reduce((sum, item) => sum + Number(item.faturamento), 0);
 
-          return {
-               periodo: `${mes}/${ano}`,
-               totalPrevisto: totalPrevisto.toFixed(2),
-               quantidadeNotas: registros.length,
-               notas: registros.map(item => ({
-                    nf: item.nf,
-                    cliente: item.cliente,
-                    vencimento: item.vencimento,
-                    faturamento: item.faturamento
-               }))
-          };
-     }
+    // 5. Retorno completo para o Front-end
+    return {
+        periodo: `${mes}/${ano}`,
+        totalPrevisto: totalPrevisto.toFixed(2),
+        totalFaturadoNoMes: totalFaturadoNoMes.toFixed(2), // NOVO DADO
+        quantidadeNotas: registrosVencimento.length,
+        notas: registrosVencimento.map(item => ({
+            nf: item.nf,
+            cliente: item.cliente,
+            vencimento: item.vencimento,
+            faturamento: item.faturamento
+        }))
+    };
+}
 
      //Método para saber quantidade notas, valores, e pendencia de pagamento para o dashboard
      async getDashboardStats() {
@@ -453,5 +465,30 @@ async findRelatorioMensalDetalhado(mes: number, ano: number) {
         }))
     };
 }
+
+
+     // Exemplo de lógica para o seu Service
+     async buscarDadosPrevisao(mes: number, ano: number) {
+          // Query para buscar as notas que VENCEM no mês (Previsão de Caixa)
+          const notasVencimento = await this.gcpsRepository
+               .createQueryBuilder("g")
+               .where("EXTRACT(MONTH FROM g.vencimento) = :mes AND EXTRACT(YEAR FROM g.vencimento) = :ano", { mes, ano })
+               .getMany();
+
+          // Query para somar o quanto foi EMITIDO no mês (Faturamento Bruto)
+          const faturamentoMes = await this.gcpsRepository
+               .createQueryBuilder("g")
+               .select("SUM(g.faturamento)", "total")
+               .where("EXTRACT(MONTH FROM g.emissao) = :mes AND EXTRACT(YEAR FROM g.emissao) = :ano", { mes, ano })
+               .getRawOne();
+
+          return {
+               periodo: `${mes}/${ano}`,
+               totalPrevisto: notasVencimento.reduce((acc, nota) => acc + nota.faturamento, 0),
+               totalFaturadoNoMes: faturamentoMes.total || 0, // O novo dado!
+               quantidadeNotas: notasVencimento.length,
+               notas: notasVencimento
+          };
+     }
 }
 
