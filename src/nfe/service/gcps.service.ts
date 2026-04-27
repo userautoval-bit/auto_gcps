@@ -14,45 +14,55 @@ export class GcpsService {
 
      // Método para buscar todos os GCPs
      async findAll(page: number = 1, limit: number = 5, search?: string, status?: string) {
-          // 1. Construir a cláusula WHERE dinamicamente
-          let onde: any = {};
+    // 1. Construir a cláusula WHERE dinamicamente (MANTIDO IGUAL)
+    let onde: any = {};
 
-          // Filtro de Texto (Busca em Cliente ou NF)
-          if (search) {
-               onde = [
-                    { cliente: ILike(`%${search}%`) },
-                    { nf: ILike(`%${search}%`) }
-               ];
-          }
+    if (search) {
+        onde = [
+            { cliente: ILike(`%${search}%`) },
+            { nf: ILike(`%${search}%`) }
+        ];
+    }
 
-          // Filtro de Status
-          if (status && status !== 'Todos') {
-               // Se a busca já tiver o array do 'search', precisamos aplicar o status em cada condição
-               if (Array.isArray(onde)) {
-                    onde = onde.map(condicao => ({
-                         ...condicao,
-                         recebido_em: status === 'Recebida' ? Not(IsNull()) : IsNull()
-                    }));
-               } else {
-                    onde.recebido_em = status === 'Recebida' ? Not(IsNull()) : IsNull();
-               }
-          }
+    if (status && status !== 'Todos') {
+        if (Array.isArray(onde)) {
+            onde = onde.map(condicao => ({
+                ...condicao,
+                recebido_em: status === 'Recebida' ? Not(IsNull()) : IsNull()
+            }));
+        } else {
+            onde.recebido_em = status === 'Recebida' ? Not(IsNull()) : IsNull();
+        }
+    }
 
-          // 2. Executar a busca com os filtros
-          const [registros, total] = await this.gcpsRepository.findAndCount({
-               where: onde,
-               order: { emissao: 'DESC' },
-               skip: (page - 1) * limit,
-               take: limit,
-          });
+    // 2. Executar a busca com os filtros (MANTIDO IGUAL)
+    const [registros, total] = await this.gcpsRepository.findAndCount({
+        where: onde,
+        order: { emissao: 'DESC' },
+        skip: (page - 1) * limit,
+        take: limit,
+    });
 
-          return {
-               data: registros,
-               total,
-               page,
-               lastPage: Math.ceil(total / limit),
-          };
-     }
+    // 3. O SEGREDO: Formatar as datas para String antes de retornar (NOVO)
+    // Isso evita que o fuso horário estrague a data no front-end
+    const registrosFormatados = registros.map(item => {
+        return {
+            ...item,
+            // Se houver data, extrai apenas a parte YYYY-MM-DD, senão retorna null
+            emissao: item.emissao ? new Date(item.emissao).toISOString().split('T')[0] : null,
+            vencimento: item.vencimento ? new Date(item.vencimento).toISOString().split('T')[0] : null,
+            recebido_em: item.recebido_em ? new Date(item.recebido_em).toISOString().split('T')[0] : null,
+        };
+    });
+
+    // 4. Retornar os dados formatados (ATUALIZADO)
+    return {
+        data: registrosFormatados, 
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+    };
+}
 
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {
