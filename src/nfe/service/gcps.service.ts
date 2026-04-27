@@ -1,6 +1,6 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
-import { Between, DeleteResult, ILike, IsNull, Not, Repository } from "typeorm";
+import { Between, DeleteResult, ILike, IsNull, Not, Raw, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
 
 
@@ -13,10 +13,11 @@ export class GcpsService {
 
 
      // Método para buscar todos os GCPs
-     async findAll(page: number = 1, limit: number = 5, search?: string, status?: string) {
-    // 1. Construir a cláusula WHERE dinamicamente (MANTIDO IGUAL)
+     async findAll(page: number = 1, limit: number = 5, search?: string, status?: string, valor?: string) {
+    // 1. Construir a cláusula WHERE dinamicamente
     let onde: any = {};
 
+    // Se houver busca por texto (Cliente ou NF)
     if (search) {
         onde = [
             { cliente: ILike(`%${search}%`) },
@@ -24,18 +25,37 @@ export class GcpsService {
         ];
     }
 
-    if (status && status !== 'Todos') {
+    // --- NOVO: Lógica para o filtro de VALOR (Faturamento) ---
+    if (valor) {
+        const valorFormatado = valor.replace(',', '.');
         if (Array.isArray(onde)) {
+            // Se já existe um array (por causa do search), adicionamos a condição de valor em cada objeto do OR
+            // Nota: Como faturamento é numeric, o ideal no TypeORM é Raw se quiser busca parcial, 
+            // mas para manter sua estrutura simples, tentamos converter para string.
             onde = onde.map(condicao => ({
                 ...condicao,
-                recebido_em: status === 'Recebida' ? Not(IsNull()) : IsNull()
+                faturamento: Raw((alias) => `CAST(${alias} AS TEXT) ILike :val`, { val: `%${valorFormatado}%` })
             }));
         } else {
-            onde.recebido_em = status === 'Recebida' ? Not(IsNull()) : IsNull();
+            // Se não tem busca por texto, filtramos apenas pelo valor
+            onde.faturamento = Raw((alias) => `CAST(${alias} AS TEXT) ILike :val`, { val: `%${valorFormatado}%` });
         }
     }
 
-    // 2. Executar a busca com os filtros (MANTIDO IGUAL)
+    // Filtro de Status (Mantendo sua lógica original de mapeamento)
+    if (status && status !== 'Todos') {
+        const condicaoStatus = status === 'Recebida' ? Not(IsNull()) : IsNull();
+        if (Array.isArray(onde)) {
+            onde = onde.map(condicao => ({
+                ...condicao,
+                recebido_em: condicaoStatus
+            }));
+        } else {
+            onde.recebido_em = condicaoStatus;
+        }
+    }
+
+    // 2. Executar a busca com os filtros
     const [registros, total] = await this.gcpsRepository.findAndCount({
         where: onde,
         order: { emissao: 'DESC' },
@@ -43,19 +63,16 @@ export class GcpsService {
         take: limit,
     });
 
-    // 3. O SEGREDO: Formatar as datas para String antes de retornar (NOVO)
-    // Isso evita que o fuso horário estrague a data no front-end
+    // 3. Formatar as datas (Mantendo sua lógica de segurança contra fuso horário)
     const registrosFormatados = registros.map(item => {
         return {
             ...item,
-            // Se houver data, extrai apenas a parte YYYY-MM-DD, senão retorna null
             emissao: item.emissao ? new Date(item.emissao).toISOString().split('T')[0] : null,
             vencimento: item.vencimento ? new Date(item.vencimento).toISOString().split('T')[0] : null,
             recebido_em: item.recebido_em ? new Date(item.recebido_em).toISOString().split('T')[0] : null,
         };
     });
 
-    // 4. Retornar os dados formatados (ATUALIZADO)
     return {
         data: registrosFormatados, 
         total,
@@ -63,7 +80,6 @@ export class GcpsService {
         lastPage: Math.ceil(total / limit),
     };
 }
-
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {
           const registro = await this.gcpsRepository.findOne({ where: { id } });
