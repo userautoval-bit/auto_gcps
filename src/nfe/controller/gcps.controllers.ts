@@ -10,24 +10,28 @@ export class GcpsController {
     constructor(private gcpsService: GcpsService) { }
 
     // Endpoint para buscar todos os GCPs com paginação
+    // Endpoint para buscar todos os GCPs com paginação
     @Get()
     @HttpCode(HttpStatus.OK)
     @ApiOkResponse({ type: [Gcps] })
     @ApiQuery({ name: 'page', required: false, example: 1 })
     @ApiQuery({ name: 'limit', required: false, example: 10 })
-    @ApiQuery({ name: 'search', required: false }) // Swagger
-    @ApiQuery({ name: 'status', required: false }) // Swagger
+    @ApiQuery({ name: 'search', required: false })
+    @ApiQuery({ name: 'status', required: false })
+    @ApiQuery({ name: 'valor', required: false }) // <-- ADICIONADO PARA O SWAGGER
     findAll(
         @Query('page') page: number = 1,
         @Query('limit') limit: number = 10,
-        @Query('search') search?: string,   // Captura o search
-        @Query('status') status?: string    // Captura o status
+        @Query('search') search?: string,
+        @Query('status') status?: string,
+        @Query('valor') valor?: string      // <-- CAPTURA O NOVO PARÂMETRO
     ): Promise<any> {
         return this.gcpsService.findAll(
             Number(page),
             Number(limit),
             search,
-            status
+            status,
+            valor                           // <-- PASSA PARA O SERVICE
         );
     }
 
@@ -151,7 +155,7 @@ export class GcpsController {
     ) {
         return await this.gcpsService.findPrevisaoMensal(Number(mes), Number(ano));
     }
-    
+
     @Get('relatorio/anual/:ano')
     @ApiOperation({ summary: 'Retorna estatísticas mensais de um ano específico' })
     async getRelatorioAnual(@Param('ano', ParseIntPipe) ano: number) {
@@ -159,11 +163,11 @@ export class GcpsController {
     }
 
     @Get('relatorio/detalhado/:mes/:ano')
-async getRelatorioDetalhado(
-  @Param('mes', ParseIntPipe) mes: number,
-  @Param('ano', ParseIntPipe) ano: number
-) {
-  return await this.gcpsService.findRelatorioMensalDetalhado(mes, ano);
-}
+    async getRelatorioDetalhado(
+        @Param('mes', ParseIntPipe) mes: number,
+        @Param('ano', ParseIntPipe) ano: number
+    ) {
+        return await this.gcpsService.findRelatorioMensalDetalhado(mes, ano);
+    }
 
 }
