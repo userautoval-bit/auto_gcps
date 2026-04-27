@@ -151,6 +151,7 @@ export class GcpsController {
     ) {
         return await this.gcpsService.findPrevisaoMensal(Number(mes), Number(ano));
     }
+    
 
     @Get('relatorio/anual/:ano')
     @ApiOperation({ summary: 'Retorna estatísticas mensais de um ano específico' })
