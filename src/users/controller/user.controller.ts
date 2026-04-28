@@ -15,4 +15,11 @@ export class UsuarioController{
         return this.usuarioService.findAll();
     }
 
+
+    @Get('/:id')
+    @HttpCode(HttpStatus.OK)
+    findById(@Param('id', ParseIntPipe) id: number): Promise<Usuario>{
+        return this.usuarioService.findById(id)
+    }
+
 }
