@@ -5,6 +5,7 @@ import { GcpsModule } from './nfe/gcps.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProdService } from './data/prod.service';
+import { UsuarioModule } from './users/users.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { ProdService } from './data/prod.service';
       imports: [ConfigModule],
     }),
     GcpsModule,
+    UsuarioModule
   ],
   controllers: [AppController],
   providers: [],
