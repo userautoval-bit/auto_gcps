@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Usuario } from "src/users/model/user.entity";
+import { Column, Entity, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity({name:"tb_controle_financeiro"})
 export class Gcps {
@@ -39,4 +40,12 @@ export class Gcps {
   @ApiProperty()
   @Column({ type: 'varchar', length: 50, nullable: true })
   tipo_pg: string;
+
+  
+  @ApiProperty({ type: () => Usuario })  
+  @ManyToOne(() => Usuario, (usuario) => usuario.gcps, {
+            onDelete: "CASCADE"
+        })
+        usuario: Usuario
+
 }

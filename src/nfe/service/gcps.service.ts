@@ -3,7 +3,7 @@ import { Gcps } from "../model/gcps.entity";
 import { Between, DeleteResult, ILike, IsNull, Not, Raw, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
 
-
+@Injectable()
 export class GcpsService {
 
      constructor(
@@ -14,6 +14,7 @@ export class GcpsService {
 
      // Método para buscar todos os GCPs
      async findAll(page: number = 1, limit: number = 5, search?: string, status?: string, valor?: string) {
+          
     // 1. Construir a cláusula WHERE dinamicamente
     let onde: any = {};
 
@@ -58,6 +59,7 @@ export class GcpsService {
     // 2. Executar a busca com os filtros
     const [registros, total] = await this.gcpsRepository.findAndCount({
         where: onde,
+        relations: { usuario: true },
         order: { emissao: 'DESC' },
         skip: (page - 1) * limit,
         take: limit,
@@ -82,7 +84,12 @@ export class GcpsService {
 }
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {
-          const registro = await this.gcpsRepository.findOne({ where: { id } });
+          const registro = await this.gcpsRepository.findOne(
+               { 
+                    where: 
+                    { id },
+               relations: { usuario: true } }
+          );
           if (!registro) {
                throw new NotFoundException(`Registro com ID ${id} não encontrado.`);
           }

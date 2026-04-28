@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, MinLength } from "class-validator";
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import { Gcps } from "src/nfe/model/gcps.entity";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from "typeorm";
 
 
 @Entity({ name: "tb_usuarios" })
@@ -30,4 +31,8 @@ export class Usuario {
     @CreateDateColumn({ type: 'timestamptz' }) // Faz o mapeamento do created_at automaticamente
     @ApiProperty()
     created_at: Date;
+
+    @ApiProperty() 
+    @OneToMany(() => Gcps, (gcps) => gcps.usuario) 
+    gcps: Gcps []
 }
