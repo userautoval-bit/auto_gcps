@@ -27,4 +27,10 @@ export class UsuarioController{
     async create(@Body() usuario: Usuario): Promise<Usuario>{
         return this.usuarioService.create(usuario)
     }
+
+    @Put('/atualizar')
+    @HttpCode(HttpStatus.OK)
+    async update(@Body() usuario: Usuario): Promise<Usuario>{
+        return this.usuarioService.update(usuario)
+    }
 }
