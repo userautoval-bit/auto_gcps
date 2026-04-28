@@ -1,9 +1,13 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
 import { ApiBody, ApiOkResponse, ApiOperation, ApiQuery } from "@nestjs/swagger";
+import { JwtAuthGuard } from "src/auth/guard/jwr-auth.guard";
 
+
+
+@UseGuards(JwtAuthGuard)
 @ApiTags('gcps')
 @Controller('gcps')
 export class GcpsController {
