@@ -18,7 +18,7 @@ export class UsuarioController{
 
     @Get('/:id')
     @HttpCode(HttpStatus.OK)
-    findById(@Param('id', ParseIntPipe) id: number): Promise<Usuario>{
+    findById(@Param('id', ParseIntPipe) id: number): Promise<Usuario | null>{
         return this.usuarioService.findById(id)
     }
 
