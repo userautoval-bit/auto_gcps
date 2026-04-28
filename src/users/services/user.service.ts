@@ -13,13 +13,13 @@ export class UsuarioService {
     ) { }
 
     
-    // async findByUsuario(usuario: string): Promise<Usuario | undefined> {
-    //     return await this.usuarioRepository.findOne({
-    //         where: {
-    //             usuario: usuario
-    //         }
-    //     })
-    // }
+    async findByUsuario(usuario: string): Promise<Usuario | null> {
+        return await this.usuarioRepository.findOne({
+            where: {
+                username: usuario
+            }
+        })
+    }
 
     async findAll(): Promise<Usuario[]> {
         return await this.usuarioRepository.find({
@@ -27,7 +27,7 @@ export class UsuarioService {
         });
     }
 
-    async findById(id: number): Promise<Usuario> {
+    async findById(id: number): Promise<Usuario | null> {
 
         const usuario = await this.usuarioRepository.findOne({
             where: {
@@ -42,5 +42,17 @@ export class UsuarioService {
 
     }
 
+
+    async create(usuario: Usuario): Promise<Usuario> {
+        
+        const buscaUsuario = await this.findByUsuario(usuario.username);
+
+        if (buscaUsuario)
+            throw new HttpException("O Usuario já existe!", HttpStatus.BAD_REQUEST);
+
+        //  usuario.password = await this.bcrypt.criptografarSenha(usuario.password)
+        return await this.usuarioRepository.save(usuario);
+
+    }
 
 }
