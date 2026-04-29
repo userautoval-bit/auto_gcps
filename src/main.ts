@@ -10,6 +10,7 @@ async function bootstrap() {
     .setDescription('API de controle financeiro e notas fiscais')
     .setVersion('1.0')
     .addTag('gcps')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('/swagger', app, document);
