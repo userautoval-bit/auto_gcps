@@ -54,6 +54,7 @@ export class GcpsController {
 
 
     // Endpoint para criar um novo GCP
+    @UseGuards(JwtAuthGuard)
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async create(@Body() gcpsData: Gcps): Promise<Gcps> {
