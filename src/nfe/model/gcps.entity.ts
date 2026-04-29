@@ -42,11 +42,10 @@ export class Gcps {
   tipo_pg: string;
 
   
-  @ApiProperty({ type: () => Usuario })  
+ @ApiProperty({ type: () => Usuario })  
   @ManyToOne(() => Usuario, (usuario) => usuario.gcps, {
-            onDelete: "CASCADE"
-        })
-  usuario: Usuario
+      onDelete: "CASCADE"
+  })
 
   @JoinColumn({ name: "usuario_id" }) // <-- FORÇA O TYPEORM A USAR O NOME DO BANCO
   usuario: Usuario;
