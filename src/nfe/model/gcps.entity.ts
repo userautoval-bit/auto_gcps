@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Usuario } from "src/users/model/user.entity";
-import { Column, Entity, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity({name:"tb_controle_financeiro"})
 export class Gcps {
@@ -46,6 +46,9 @@ export class Gcps {
   @ManyToOne(() => Usuario, (usuario) => usuario.gcps, {
             onDelete: "CASCADE"
         })
-        usuario: Usuario
+  usuario: Usuario
+
+  @JoinColumn({ name: "usuario_id" }) // <-- FORÇA O TYPEORM A USAR O NOME DO BANCO
+  usuario: Usuario;
 
 }
