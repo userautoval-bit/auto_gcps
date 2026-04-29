@@ -2,6 +2,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Gcps } from "../model/gcps.entity";
 import { Between, DeleteResult, ILike, IsNull, Not, Raw, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
+import { Bcrypt } from "src/auth/bcrypt/bcrypt";
 
 @Injectable()
 export class GcpsService {
@@ -9,6 +10,7 @@ export class GcpsService {
      constructor(
           @InjectRepository(Gcps)
           private gcpsRepository: Repository<Gcps>,
+          private bcrypt: Bcrypt
      ) { }
 
 

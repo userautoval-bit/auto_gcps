@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPip
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
-import { ApiBody, ApiOkResponse, ApiOperation, ApiQuery } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiQuery } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/auth/guard/jwr-auth.guard";
 
 
@@ -10,6 +10,7 @@ import { JwtAuthGuard } from "src/auth/guard/jwr-auth.guard";
 @UseGuards(JwtAuthGuard)
 @ApiTags('gcps')
 @Controller('gcps')
+@ApiBearerAuth()
 export class GcpsController {
     constructor(private gcpsService: GcpsService) { }
 
