@@ -3,6 +3,7 @@ import { Gcps } from "../model/gcps.entity";
 import { Between, DeleteResult, ILike, IsNull, Not, Raw, Repository } from "typeorm";
 import { HttpException, HttpStatus, NotFoundException, InternalServerErrorException, Injectable } from "@nestjs/common";
 import { Bcrypt } from "src/auth/bcrypt/bcrypt";
+import { doc } from 'src/services/googleSheetsService';
 
 @Injectable()
 export class GcpsService {
@@ -16,81 +17,82 @@ export class GcpsService {
 
      // Método para buscar todos os GCPs
      async findAll(page: number = 1, limit: number = 5, search?: string, status?: string, valor?: string) {
-          
-    // 1. Construir a cláusula WHERE dinamicamente
-    let onde: any = {};
 
-    // Se houver busca por texto (Cliente ou NF)
-    if (search) {
-        onde = [
-            { cliente: ILike(`%${search}%`) },
-            { nf: ILike(`%${search}%`) }
-        ];
-    }
+          // 1. Construir a cláusula WHERE dinamicamente
+          let onde: any = {};
 
-    // --- NOVO: Lógica para o filtro de VALOR (Faturamento) ---
-    if (valor) {
-        const valorFormatado = valor.replace(',', '.');
-        if (Array.isArray(onde)) {
-            // Se já existe um array (por causa do search), adicionamos a condição de valor em cada objeto do OR
-            // Nota: Como faturamento é numeric, o ideal no TypeORM é Raw se quiser busca parcial, 
-            // mas para manter sua estrutura simples, tentamos converter para string.
-            onde = onde.map(condicao => ({
-                ...condicao,
-                faturamento: Raw((alias) => `CAST(${alias} AS TEXT) ILike :val`, { val: `%${valorFormatado}%` })
-            }));
-        } else {
-            // Se não tem busca por texto, filtramos apenas pelo valor
-            onde.faturamento = Raw((alias) => `CAST(${alias} AS TEXT) ILike :val`, { val: `%${valorFormatado}%` });
-        }
-    }
+          // Se houver busca por texto (Cliente ou NF)
+          if (search) {
+               onde = [
+                    { cliente: ILike(`%${search}%`) },
+                    { nf: ILike(`%${search}%`) }
+               ];
+          }
 
-    // Filtro de Status (Mantendo sua lógica original de mapeamento)
-    if (status && status !== 'Todos') {
-        const condicaoStatus = status === 'Recebida' ? Not(IsNull()) : IsNull();
-        if (Array.isArray(onde)) {
-            onde = onde.map(condicao => ({
-                ...condicao,
-                recebido_em: condicaoStatus
-            }));
-        } else {
-            onde.recebido_em = condicaoStatus;
-        }
-    }
+          // --- NOVO: Lógica para o filtro de VALOR (Faturamento) ---
+          if (valor) {
+               const valorFormatado = valor.replace(',', '.');
+               if (Array.isArray(onde)) {
+                    // Se já existe um array (por causa do search), adicionamos a condição de valor em cada objeto do OR
+                    // Nota: Como faturamento é numeric, o ideal no TypeORM é Raw se quiser busca parcial, 
+                    // mas para manter sua estrutura simples, tentamos converter para string.
+                    onde = onde.map(condicao => ({
+                         ...condicao,
+                         faturamento: Raw((alias) => `CAST(${alias} AS TEXT) ILike :val`, { val: `%${valorFormatado}%` })
+                    }));
+               } else {
+                    // Se não tem busca por texto, filtramos apenas pelo valor
+                    onde.faturamento = Raw((alias) => `CAST(${alias} AS TEXT) ILike :val`, { val: `%${valorFormatado}%` });
+               }
+          }
 
-    // 2. Executar a busca com os filtros
-    const [registros, total] = await this.gcpsRepository.findAndCount({
-        where: onde,
-        relations: { usuario: true },
-        order: { emissao: 'DESC' },
-        skip: (page - 1) * limit,
-        take: limit,
-    });
+          // Filtro de Status (Mantendo sua lógica original de mapeamento)
+          if (status && status !== 'Todos') {
+               const condicaoStatus = status === 'Recebida' ? Not(IsNull()) : IsNull();
+               if (Array.isArray(onde)) {
+                    onde = onde.map(condicao => ({
+                         ...condicao,
+                         recebido_em: condicaoStatus
+                    }));
+               } else {
+                    onde.recebido_em = condicaoStatus;
+               }
+          }
 
-    // 3. Formatar as datas (Mantendo sua lógica de segurança contra fuso horário)
-    const registrosFormatados = registros.map(item => {
-        return {
-            ...item,
-            emissao: item.emissao ? new Date(item.emissao).toISOString().split('T')[0] : null,
-            vencimento: item.vencimento ? new Date(item.vencimento).toISOString().split('T')[0] : null,
-            recebido_em: item.recebido_em ? new Date(item.recebido_em).toISOString().split('T')[0] : null,
-        };
-    });
+          // 2. Executar a busca com os filtros
+          const [registros, total] = await this.gcpsRepository.findAndCount({
+               where: onde,
+               relations: { usuario: true },
+               order: { emissao: 'DESC' },
+               skip: (page - 1) * limit,
+               take: limit,
+          });
 
-    return {
-        data: registrosFormatados, 
-        total,
-        page,
-        lastPage: Math.ceil(total / limit),
-    };
-}
+          // 3. Formatar as datas (Mantendo sua lógica de segurança contra fuso horário)
+          const registrosFormatados = registros.map(item => {
+               return {
+                    ...item,
+                    emissao: item.emissao ? new Date(item.emissao).toISOString().split('T')[0] : null,
+                    vencimento: item.vencimento ? new Date(item.vencimento).toISOString().split('T')[0] : null,
+                    recebido_em: item.recebido_em ? new Date(item.recebido_em).toISOString().split('T')[0] : null,
+               };
+          });
+
+          return {
+               data: registrosFormatados,
+               total,
+               page,
+               lastPage: Math.ceil(total / limit),
+          };
+     }
      //para buscar um GCP pelo ID
      async findById(id: number): Promise<Gcps> {
           const registro = await this.gcpsRepository.findOne(
-               { 
-                    where: 
-                    { id },
-               relations: { usuario: true } }
+               {
+                    where:
+                         { id },
+                    relations: { usuario: true }
+               }
           );
           if (!registro) {
                throw new NotFoundException(`Registro com ID ${id} não encontrado.`);
@@ -343,49 +345,49 @@ export class GcpsService {
           };
      }
 
-// Prevendo o faturamento mensal e total faturado no mês
-async findPrevisaoMensal(mes: number, ano: number) {
-    // 1. Criar as datas de intervalo para o filtro
-    const dataInicio = new Date(ano, mes - 1, 1);
-    const dataFim = new Date(ano, mes, 0, 23, 59, 59);
+     // Prevendo o faturamento mensal e total faturado no mês
+     async findPrevisaoMensal(mes: number, ano: number) {
+          // 1. Criar as datas de intervalo para o filtro
+          const dataInicio = new Date(ano, mes - 1, 1);
+          const dataFim = new Date(ano, mes, 0, 23, 59, 59);
 
-    // 2. BUSCA 1: O que vai VENCER no mês (Sua lógica original que já funciona)
-    const registrosVencimento = await this.gcpsRepository.find({
-        where: {
-            vencimento: Between(dataInicio, dataFim),
-            recebido_em: IsNull(), // Mantém apenas o que está pendente
-        },
-        order: { vencimento: 'ASC' }
-    });
+          // 2. BUSCA 1: O que vai VENCER no mês (Sua lógica original que já funciona)
+          const registrosVencimento = await this.gcpsRepository.find({
+               where: {
+                    vencimento: Between(dataInicio, dataFim),
+                    recebido_em: IsNull(), // Mantém apenas o que está pendente
+               },
+               order: { vencimento: 'ASC' }
+          });
 
-    // 3. BUSCA 2: Tudo que foi EMITIDO no mês (Faturamento Bruto / Regime de Competência)
-    // Aqui buscamos todas as notas, independente de estarem pagas ou não
-    const registrosEmissao = await this.gcpsRepository.find({
-        where: {
-            emissao: Between(dataInicio, dataFim),
-        }
-    });
+          // 3. BUSCA 2: Tudo que foi EMITIDO no mês (Faturamento Bruto / Regime de Competência)
+          // Aqui buscamos todas as notas, independente de estarem pagas ou não
+          const registrosEmissao = await this.gcpsRepository.find({
+               where: {
+                    emissao: Between(dataInicio, dataFim),
+               }
+          });
 
-    // 4. Calcular os totalizadores
-    const totalPrevisto = registrosVencimento.reduce((sum, item) => sum + Number(item.faturamento), 0);
-    
-    // Soma do Faturamento Bruto (Baseado na data de emissão)
-    const totalFaturadoNoMes = registrosEmissao.reduce((sum, item) => sum + Number(item.faturamento), 0);
+          // 4. Calcular os totalizadores
+          const totalPrevisto = registrosVencimento.reduce((sum, item) => sum + Number(item.faturamento), 0);
 
-    // 5. Retorno completo para o Front-end
-    return {
-        periodo: `${mes}/${ano}`,
-        totalPrevisto: totalPrevisto.toFixed(2),
-        totalFaturadoNoMes: totalFaturadoNoMes.toFixed(2), // NOVO DADO
-        quantidadeNotas: registrosVencimento.length,
-        notas: registrosVencimento.map(item => ({
-            nf: item.nf,
-            cliente: item.cliente,
-            vencimento: item.vencimento,
-            faturamento: item.faturamento
-        }))
-    };
-}
+          // Soma do Faturamento Bruto (Baseado na data de emissão)
+          const totalFaturadoNoMes = registrosEmissao.reduce((sum, item) => sum + Number(item.faturamento), 0);
+
+          // 5. Retorno completo para o Front-end
+          return {
+               periodo: `${mes}/${ano}`,
+               totalPrevisto: totalPrevisto.toFixed(2),
+               totalFaturadoNoMes: totalFaturadoNoMes.toFixed(2), // NOVO DADO
+               quantidadeNotas: registrosVencimento.length,
+               notas: registrosVencimento.map(item => ({
+                    nf: item.nf,
+                    cliente: item.cliente,
+                    vencimento: item.vencimento,
+                    faturamento: item.faturamento
+               }))
+          };
+     }
 
      //Método para saber quantidade notas, valores, e pendencia de pagamento para o dashboard
      async getDashboardStats() {
@@ -450,46 +452,46 @@ async findPrevisaoMensal(mes: number, ano: number) {
 
 
 
-  // Este é o método que traz o "filme completo" do mês para a nova visualização
-async findRelatorioMensalDetalhado(mes: number, ano: number) {
-    // 1. Definir o intervalo do mês
-    const dataInicio = new Date(ano, mes - 1, 1);
-    const dataFim = new Date(ano, mes, 0, 23, 59, 59);
+     // Este é o método que traz o "filme completo" do mês para a nova visualização
+     async findRelatorioMensalDetalhado(mes: number, ano: number) {
+          // 1. Definir o intervalo do mês
+          const dataInicio = new Date(ano, mes - 1, 1);
+          const dataFim = new Date(ano, mes, 0, 23, 59, 59);
 
-    // 2. Buscar TODOS os registros do intervalo (sem filtrar por recebido_em)
-    const notas = await this.gcpsRepository.find({
-        where: {
-            vencimento: Between(dataInicio, dataFim)
-        },
-        order: { vencimento: 'ASC' }
-    });
+          // 2. Buscar TODOS os registros do intervalo (sem filtrar por recebido_em)
+          const notas = await this.gcpsRepository.find({
+               where: {
+                    vencimento: Between(dataInicio, dataFim)
+               },
+               order: { vencimento: 'ASC' }
+          });
 
-    // 3. Calcular os totais baseados no que veio do banco
-    const totalFaturado = notas.reduce((acc, n) => acc + Number(n.faturamento), 0);
-    const totalRecebido = notas.reduce((acc, n) => acc + (n.recebido_em ? Number(n.faturamento) : 0), 0);
-    const totalPendente = totalFaturado - totalRecebido;
+          // 3. Calcular os totais baseados no que veio do banco
+          const totalFaturado = notas.reduce((acc, n) => acc + Number(n.faturamento), 0);
+          const totalRecebido = notas.reduce((acc, n) => acc + (n.recebido_em ? Number(n.faturamento) : 0), 0);
+          const totalPendente = totalFaturado - totalRecebido;
 
-    // 4. Retornar o objeto estruturado para o Front
-    return {
-        busca: { mes, ano },
-        totais: {
-            faturado: totalFaturado,
-            recebido: totalRecebido,
-            pendente: totalPendente,
-            quantidade: notas.length
-        },
-        // Retornamos as notas com o campo recebido_em para o Front saber colorir a linha
-        notas: notas.map(n => ({
-            nf: n.nf,
-            emissao: n.emissao,
-            cliente: n.cliente,
-            vencimento: n.vencimento,
-            faturamento: n.faturamento,
-            recebido_em: n.recebido_em,
-            tipo_pg: n.tipo_pg || "---"
-        }))
-    };
-}
+          // 4. Retornar o objeto estruturado para o Front
+          return {
+               busca: { mes, ano },
+               totais: {
+                    faturado: totalFaturado,
+                    recebido: totalRecebido,
+                    pendente: totalPendente,
+                    quantidade: notas.length
+               },
+               // Retornamos as notas com o campo recebido_em para o Front saber colorir a linha
+               notas: notas.map(n => ({
+                    nf: n.nf,
+                    emissao: n.emissao,
+                    cliente: n.cliente,
+                    vencimento: n.vencimento,
+                    faturamento: n.faturamento,
+                    recebido_em: n.recebido_em,
+                    tipo_pg: n.tipo_pg || "---"
+               }))
+          };
+     }
 
 
      // Exemplo de lógica para o seu Service
@@ -515,5 +517,69 @@ async findRelatorioMensalDetalhado(mes: number, ano: number) {
                notas: notasVencimento
           };
      }
-}
 
+
+     // Dentro da classe GcpsService
+     async sincronizarPlanilhaComBanco() {
+          try {
+               await doc.loadInfo();
+               const aba = doc.sheetsByIndex[0]; // Pega a primeira aba
+               const linhas = await aba.getRows();
+
+               console.log(`[Sincronização] Verificando ${linhas.length} linhas da planilha...`);
+
+               for (const linha of linhas) {
+                    const nf = linha.get('NF');
+                    if (!nf) continue; // Pula se a linha estiver vazia
+
+                    // 1. Tenta encontrar a nota no banco de dados pela NF
+                    let registro = await this.gcpsRepository.findOne({ where: { nf: nf } });
+
+                    // 2. Prepara os dados vindo da planilha (mapeando os nomes das colunas)
+                    // Dentro do loop 'for (const linha of linhas)'
+                    const dadosPlanilha: any = { // Usamos 'any' aqui para facilitar o merge se os tipos da entidade forem complexos
+                         nf: nf,
+                         cliente: linha.get('CLIENTE'),
+                         emissao: this.tratarData(linha.get('EMISSÃO')),
+                         vencimento: this.tratarData(linha.get('Vencimento')),
+                         faturamento: this.limparMoeda(linha.get('Valor a Receber')),
+                         v_recebido: this.limparMoeda(linha.get('Valor Recebido')),
+                         recebido_em: this.tratarData(linha.get('Recebido em')),
+                         tipo_pg: linha.get('Tipo de Pgto') || 'Não Informado',
+                    };
+
+                    if (registro) {
+                         // ATUALIZA: Atribuímos os valores manualmente ou via Object.assign para evitar o erro de DeepPartial
+                         Object.assign(registro, dadosPlanilha);
+                         await this.gcpsRepository.save(registro);
+                    } else {
+                         // CRIA: Criamos o novo registro passando o objeto formatado
+                         const novoRegistro = this.gcpsRepository.create(dadosPlanilha);
+                         await this.gcpsRepository.save(novoRegistro);
+                    }
+               }
+
+               return { mensagem: 'Sincronização concluída com sucesso!', total: linhas.length };
+          } catch (error) {
+               console.error('Erro ao sincronizar:', error);
+               throw new InternalServerErrorException('Erro ao processar dados da planilha.');
+          }
+     }
+
+     // Funções auxiliares essenciais
+     private limparMoeda(valor: string): number {
+          if (!valor) return 0;
+          // Remove R$, pontos de milhar e troca vírgula por ponto
+          const numero = valor.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+          return parseFloat(numero) || 0;
+     }
+
+     private tratarData(dataStr: string): Date | null {
+          if (!dataStr || dataStr.trim() === "") return null;
+          const partes = dataStr.split('/');
+          if (partes.length !== 3) return null;
+          // Converte DD/MM/YYYY para objeto Date
+          return new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+     }
+
+}
