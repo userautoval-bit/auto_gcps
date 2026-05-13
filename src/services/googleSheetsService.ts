@@ -4,7 +4,7 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import creds from '../config/google-auth.json'; // O arquivo que você baixou
 
 // ID da Planilha: Pegue na URL da sua planilha entre o /d/ e o /edit
-const SPREADSHEET_ID = 'COLE_AQUI_O_ID_DA_SUA_PLANILHA';
+const SPREADSHEET_ID = '1ZmOOHig3x_lJ34s2PPKv-H_2wmZDfdNd';
 
 const auth = new JWT({
   email: creds.client_email,
