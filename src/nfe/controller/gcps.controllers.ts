@@ -176,4 +176,10 @@ export class GcpsController {
         return await this.gcpsService.findRelatorioMensalDetalhado(mes, ano);
     }
 
+
+    @Post('sincronizar')
+    async sincronizar() {
+        return await this.gcpsService.sincronizarPlanilhaComBanco();
+    }
+
 }
