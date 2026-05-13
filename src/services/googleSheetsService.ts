@@ -1,14 +1,28 @@
-
 import { JWT } from 'google-auth-library';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
-import creds from '../config/google-auth.json'; // O arquivo que você baixou
 
-// ID da Planilha: Pegue na URL da sua planilha entre o /d/ e o /edit
+// 1. Lógica para carregar as credenciais de forma segura
+let creds: any;
+
+if (process.env.GOOGLE_JSON_KEY) {
+  // No Render, usamos a variável de ambiente que configuraste na imagem
+  creds = JSON.parse(process.env.GOOGLE_JSON_KEY);
+} else {
+  try {
+    // No teu PC (Local), ele tenta ler o ficheiro que está na pasta config
+    creds = require('../config/google-auth.json');
+  } catch (e) {
+    console.error("Aviso: Credenciais do Google não encontradas localmente.");
+  }
+}
+
+// 2. O ID que encontrámos na URL da tua planilha
 const SPREADSHEET_ID = '1ZmOOHig3x_lJ34s2PPKv-H_2wmZDfdNd';
 
 const auth = new JWT({
-  email: creds.client_email,
-  key: creds.private_key,
+  email: creds?.client_email,
+  // O .replace é CRÍTICO para o Render entender as quebras de linha (\n) da chave
+  key: creds?.private_key?.replace(/\\n/g, '\n'),
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 
