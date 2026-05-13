@@ -28,10 +28,29 @@ const auth = new JWT({
 
 export const doc = new GoogleSpreadsheet(SPREADSHEET_ID, auth);
 
+// export async function conectarPlanilha() {
+//   try {
+//     await doc.loadInfo(); 
+//     console.log(`Conectado à planilha: ${doc.title}`);
+//   } catch (error) {
+//     console.error('Erro ao conectar com Google Sheets:', error);
+//   }
+// }
+
 export async function conectarPlanilha() {
   try {
     await doc.loadInfo(); 
     console.log(`Conectado à planilha: ${doc.title}`);
+
+    // TESTE DE LEITURA (Não altera nada na planilha)
+    const aba = doc.sheetsByIndex[0]; // Pega a primeira aba
+    const linhas = await aba.getRows();
+    console.log(`Sucesso! Lidas ${linhas.length} linhas da planilha.`);
+    
+    if (linhas.length > 0) {
+      console.log("Exemplo da primeira linha:", linhas[0].toObject());
+    }
+
   } catch (error) {
     console.error('Erro ao conectar com Google Sheets:', error);
   }
