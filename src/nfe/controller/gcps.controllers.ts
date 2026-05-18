@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Put, Query, Res, UseGuards } from "@nestjs/common";
 import { GcpsService } from "../service/gcps.service";
 import { Gcps } from "../model/gcps.entity";
 import { ApiTags } from "@nestjs/swagger/dist/decorators/api-use-tags.decorator";
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiQuery } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/auth/guard/jwr-auth.guard";
 
+import express from 'express';
 
 
 @UseGuards(JwtAuthGuard)
@@ -182,4 +183,13 @@ export class GcpsController {
         return await this.gcpsService.sincronizarPlanilhaComBanco();
     }
 
+
+ @Get('exportar-excel')
+  async exportarExcel(
+    @Query('ano') ano: string, 
+    @Res() res: express.Response // O segredo está na tipagem correta vinda do 'express' acima
+  ) {
+    const anoNum = parseInt(ano, 10) || new Date().getFullYear();
+    return this.gcpsService.gerarExcelAnualComTemplate(anoNum, res);
+  }
 }

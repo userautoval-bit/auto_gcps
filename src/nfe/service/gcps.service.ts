@@ -5,9 +5,14 @@ import { HttpException, HttpStatus, NotFoundException, InternalServerErrorExcept
 import { Bcrypt } from "src/auth/bcrypt/bcrypt";
 import { doc } from 'src/services/googleSheetsService';
 
+import { Response } from 'express';
+import * as ExcelJS from 'exceljs';
+import * as path from 'path';
+import * as fs from 'fs';
+
 @Injectable()
 export class GcpsService {
-
+    
      constructor(
           @InjectRepository(Gcps)
           private gcpsRepository: Repository<Gcps>,
@@ -581,5 +586,81 @@ export class GcpsService {
           // Converte DD/MM/YYYY para objeto Date
           return new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
      }
+
+     async gerarExcelAnualComTemplate(ano: number, res: Response) {
+    // Como configuramos o nest-cli.json, o arquivo estará na raiz do build (dist/assets/...)
+    // __dirname geralmente aponta para dist/gcps/, então subimos dois níveis para achar a pasta assets
+    const caminhoTemplate = path.resolve(__dirname, '..', '..', 'assets', 'template.xlsx');
+
+    // Fallback de segurança: caso o build ainda esteja lendo da pasta src localmente
+    const caminhoAlternativo = path.resolve(__dirname, '..', '..', 'src', 'assets', 'template.xlsx');
+    
+    const caminhoFinal = fs.existsSync(caminhoTemplate) ? caminhoTemplate : caminhoAlternativo;
+
+    if (!fs.existsSync(caminhoFinal)) {
+      throw new NotFoundException(`O arquivo template.xlsx não foi encontrado em: ${caminhoTemplate}`);
+    }
+
+    // Filtro do TypeORM para pegar do dia 01/01 às 00:00 até 31/12 às 23:59 do ano selecionado
+    const dataInicio = new Date(`${ano}-01-01T00:00:00.000Z`);
+    const dataFim = new Date(`${ano}-12-31T23:59:59.999Z`);
+
+    const lancamentosDoAno = await this.gcpsRepository.find({
+      where: {
+        emissao: Between(dataInicio, dataFim),
+      },
+      order: { emissao: 'ASC' },
+    });
+
+    // Inicializa o Workbook do ExcelJS e lê o template estruturado
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(caminhoFinal);
+
+    const siglasMeses = [
+      'JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN',
+      'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'
+    ];
+
+    const sufixoAno = ano.toString().slice(-2); // Ex: 2026 vira "26"
+
+    // Processa os dados injetando nas abas corretas do seu molde
+    lancamentosDoAno.forEach((gcp) => {
+      const dataEmissao = new Date(gcp.emissao);
+      const numeroMes = dataEmissao.getMonth(); 
+      const nomeAbaEsperada = `${siglasMeses[numeroMes]}-${sufixoAno}`; // Ex: JAN-26
+
+      const worksheet = workbook.getWorksheet(nomeAbaEsperada);
+
+      if (worksheet) {
+        // Alimenta as colunas de A até H respeitando o layout das suas imagens
+        worksheet.addRow([
+          gcp.emissao ? new Date(gcp.emissao).toLocaleDateString('pt-BR') : '',   // A: EMISSÃO
+          gcp.vencimento ? new Date(gcp.vencimento).toLocaleDateString('pt-BR') : '', // B: Vencimento
+          gcp.recebido_em
+           ? new Date(gcp.recebido_em).toLocaleDateString('pt-BR') : '', // C: Recebido em
+          gcp.nf || '',                                                            // D: NF
+          gcp.cliente || '',                                                       // E: CLIENTE
+          gcp.faturamento ? Number(gcp.faturamento) : 0,                       // F: Valor a Receber
+          gcp.v_recebido ? Number(gcp.v_recebido) : 0,                       // G: Valor Recebido (Verde)
+          gcp.tipo_pg || '',                                                 // H: Tipo de Pgto (Azul)
+        ]);
+      }
+    });
+
+    // Configuração dos Headers HTTP para o Express do NestJS entender a transferência de arquivo
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=Relatorio_GCP_${ano}.xlsx`,
+    );
+
+    // Envia o stream binário direto para a resposta HTTP do NestJS
+    await workbook.xlsx.write(res);
+    return res.end();
+  }
+     
 
 }
